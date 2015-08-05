@@ -34,7 +34,8 @@ but not in all aspects. <br>
 
 (setq result (car (e4: 1000 10 / 10 /)))
 result ; => 10
-```))
+```
+
 <h3>Words</h3>
 Easiest way is to compare E4 with GForth.<br>
 The words not listed here are either not implemented<br>
