@@ -19,16 +19,19 @@ or equal to the GForth in both semantics and spelling.<br>
     <th>E4</th>
     <th>GForth</th>
     <th>Description</th>
+    <th>Reason</th>
   </tr>
   <tr>
     <td>:</td>
     <td>{</td>
     <td>exit interpretation mode, start compiling</td>
+    <td>colon character is OK, but { is chosen for consistency with }</td>
   </tr>
   <tr>
-    <td>:</td>
-    <td>{</td>
+    <td>;</td>
+    <td>}</td>
     <td>exit compilation mode, start interpreting</td>
+    <td>because ; is used for comments in lisp and \; is plain ugly</td>
   </tr>
 </table>
 
