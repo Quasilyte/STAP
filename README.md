@@ -59,7 +59,7 @@ or equal to the GForth in both semantics and spelling.<br>
     <td>.</td>
     <td>..</td>
     <td>exit compilation mode, start interpreting</td>
-    <td>because ; is used for comments in lisp and \; is plain ugly</td>
+    <td>dot (.) is by Emacs lisp interpreter to denote cons pairs</td>
   </tr>
 </table>
 
