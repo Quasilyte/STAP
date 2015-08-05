@@ -44,11 +44,7 @@
     (if fn
 	(if (functionp fn)
 	    (funcall fn)
-	  (progn
-	    (message "calling user func")
-	    (message "fn: %s" fn)
-	    (message "stack: %s" e4.stack)
-	    (e4:from-list fn)))
+	  (e4:from-list fn))
 	    ;(setq e4.stack (append (e4:from-list fn) e4.stack))))
 	  ;(e4:from-list fn))
       (error (format "undefined e4 word: `%s'" word)))))
@@ -129,3 +125,11 @@
      word `(lambda ()
 	    (e4.stack-push (e4.call-with-arity ',word ',arity))))))
 
+(e4.word-register
+ 'DUP (lambda () (e4.stack-push (car e4.stack))))
+
+(e4.word-register
+ 'DEPTH (lambda () (e4.stack-push (length e4.stack))))
+
+(e4.word-register
+ '.. (lambda () (message "%s" (e4.stack-pop))))
