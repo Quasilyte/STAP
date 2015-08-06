@@ -8,6 +8,8 @@ but not in all aspects. <br>
 <h3>Features</h3>
 * inlining right into the lisp code (full Emacs integration)
 * utilities like stack rollbacks after multiple evaluations
+* case-sensitive reader (most Forths are not)
+* conditionals are not compile-only words
 
 <h3>Rationale</h3>
 Because something can be better expressed in one language/style<br>
