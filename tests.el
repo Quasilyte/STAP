@@ -9,5 +9,6 @@
 (xe4:with-empty-stack
  (e4:
   { fib 1- DUP 1 > IF DUP fib SWAP 1- fib + ENDIF }
-  8 fib)) 
+  8 fib DROP)))
+
 

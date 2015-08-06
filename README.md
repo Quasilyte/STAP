@@ -4,21 +4,26 @@
 Emacs Forth is a partial Forth implementation written in lisp.<br>
 It follows the FORTH-83 standard (required word set),<br>
 but not in all aspects. <br>
+Execution speed is, obviously, is lower than the host language<br>
+capabilities, but not significantly (for now we are 30% slower than<br>
+Emacs lisp itself, our recursion produce more garbage, but no<br>
+stack grow ever involved).
 
 <h3>Features</h3>
 * inlining right into the lisp code (full Emacs integration)
 * utilities like stack rollbacks after multiple evaluations
 * case-sensitive reader (most Forths are not)
 * conditionals are not compile-only words
+* [almost] stackless recursion
 
 <h3>Rationale</h3>
-Because something can be better expressed in one language/style<br>
-while other tasks are suited for something else well.<br>
+Because something can be expressed better in one language/style<br>
+while other tasks are suited for something else.<br>
 <br>
 Say we want to find `fib(n)` number.<br>
 Forget about performance and think of fibonacci definition.<br>
 
-We can express it in forth like that:
+We can express it in Forth like that:
 ```forth
 \ readable even in form of 1-liner
 : fib 1- DUP 1 > IF DUP RECURSE SWAP 1- RECURSE + ENDIF ;
@@ -73,6 +78,14 @@ E4 to the rescue:
 
 (e4:stack-flush)
 
+(xe4:with-empty-stack
+ (e4:
+  { stack-print ( pop and print every element in the data stack )
+  DEPTH 0 > IF .. stack-print ENDIF }
+
+  ( print 1, 2, 3, 2 and 1 again )
+  1 2 3 2 1 stack-print DUP DUP DROP DROP))
+
 (setq result (car (e4: 1000 10 / 10 /)))
 result ; => 10
 ```
@@ -109,9 +122,9 @@ or equal to the GForth in both semantics and spelling.<br>
   </tr>
   <tr>
     <td>recurse</td>
-    <td>word symbol</td>
+    <td>by name</td>
     <td>call word recursively</td>
-    <td>because you want to call foo by foo, not by recurse</td>
+    <td>because you want to call foo by foo (e.g. by name), not by recurse (keyword)</td>
   </tr>
 </table>
 
