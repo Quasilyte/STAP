@@ -17,5 +17,5 @@
 
 (defmacro xe4:with-empty-stack (&rest forms)
   "flush the stack and evaluate given forms"
-  (e4:stack-flush)
+  (xe4:stack-flush)
   `(progn ,@forms))

@@ -9,6 +9,9 @@
 
 ;;;; data section ;;;;
 
+(defconst e4.TRUE -1 "Forth usually returns -1 as truth value")
+(defconst e4.FALSE 0 "only zero is considered as falsy value")
+
 ;; e4 environment variables
 (setq e4.stack '() ; main data stack for execution
       e4.tokens '() ; usually this is an input data for interpreter
@@ -27,8 +30,8 @@
 (defun e4.stack-push (scalar)
   "push scalar on top of the stack"
   (push (pcase scalar
-	  (`t -1) ; true in forth is usually -1
-	  (`nil 0) ; false in forth is usually 0
+	  (`t e4.TRUE) 
+	  (`nil e4.FALSE)
 	  (_ scalar))
 	e4.stack))
 
@@ -49,6 +52,9 @@
     (if fn
 	(if (functionp fn)
 	    (funcall fn) ; predefined word
+	  ;; there is also an option to prepend fn instructions (tokens)
+	  ;; to global token list. this can be faster and could lead
+	  ;; to nearly free recursive calls (need profiling though)
 	  (e4:from-list fn)) ; user-defined word
       (error (format "undefined e4 word: `%s'" word)))))
 
@@ -60,6 +66,10 @@
     (apply fn args)))
 
 ;;; evaluation
+
+(defmacro e4.do-nothing ()
+  "literally, do nothing at all"
+  '(lambda ()))
 
 (defun e4.next-token ()
   "throw away current token and take another"
@@ -73,9 +83,16 @@
 (defmacro e4.do-with-tokens (&rest forms)
   "evaluate passed forms through tokens (token binding passed implicitly)"
   `(while e4.tokens
-     (let ((token (car e4.tokens))) 
+     (let ((token (car e4.tokens)))
        ,@forms ; code inside can use current token via `token'
        (e4.next-token))))
+
+(defmacro e4.skip-tokens-until (termination-p)
+  "skip current token and keep skipping until `termination-p' is t"
+  `(catch 'break
+     (e4.next-token) ; skip callee token
+     (e4.do-with-tokens
+      (when ,termination-p (throw 'break nil)))))
 
 (defun e4.interpreting-eval (word)
   "process word while in interpreter mode"
@@ -119,7 +136,9 @@
 	      token)))
   e4.stack) ; resulting E4 stack is returned
 
-;;; predefined e4 words (incomplete FORTH-83 standart)
+;;;; predefined e4 words (incomplete FORTH-83 standart) ;;;;
+
+;;; fundamentals
 
 ;; basic binary and unary operators
 (dolist (pair '((+ 2) (- 2) (/ 2) (* 2) (= 2) (< 2) (> 2)
@@ -129,21 +148,45 @@
      word `(lambda ()
 	     (e4.stack-push (e4.call-with-arity ',word ',arity))))))
 
+;;; data stack manipulators
+
 (e4.word-register
  'DUP (lambda () (e4.stack-push (car e4.stack))))
 
 (e4.word-register
  'DEPTH (lambda () (e4.stack-push (length e4.stack))))
 
+;;; printing words
+
 (e4.word-register
- '.. (lambda () (message 'fd)  (message "%s" (e4.stack-pop))))
+ '.. (lambda () (message "%s" (e4.stack-pop))))
 
 (e4.word-register
  '.s (lambda () (message "<%d> %s\n" (length e4.stack) e4.stack)))
+
+;;; flow controlling words
+
+(e4.word-register
+ 'IF (lambda ()
+       (when (= e4.FALSE (e4.stack-pop))
+	 (e4.skip-tokens-until (or (eq 'ENDIF token)
+				   (eq 'ELSE token))))))
+
+(e4.word-register
+ 'ELSE (lambda ()
+	 (e4.skip-tokens-until (or (eq 'ENDIF token)
+				   (eq 'ELSE token)))))
+
+(e4.word-register
+ 'ENDIF (e4.do-nothing))
 
 ;;;; advanced api ;;;;
 
 ;; it is included into E4 package only temporary.
 ;; those functions are completely optional, so
-;; wise choice lies in separation.
-(load-file "./xe4.el")
+;; wise choice lies in separation. 
+(load-file
+ (expand-file-name "xe4.el" (file-name-directory (or load-file-name
+						     buffer-file-name))))
+
+
