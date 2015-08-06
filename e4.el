@@ -1,3 +1,6 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;; `e4' is Emacs Forth embedded interpreter ;;;;;
+
 ;; package naming convention:
 ;; e4:name -- exported (public) binding
 ;; e4.name -- unexported (private) binding
@@ -116,24 +119,6 @@
 	      token)))
   e4.stack) ; resulting E4 stack is returned
 
-;;; advanced api
-
-(defun e4:stack-flush ()
-  "make E4 stack empty"
-  (setq e4.stack '()))
-
-(defmacro e4:with-stack-rollback (&rest forms)
-  "save stack state, evaluate forms, then restore stack state"
-  (let ((stack-state (make-symbol "stack-backup")))
-    (let ((stack-state e4.stack))
-      `(progn ,@forms)
-      `(setq e4.stack ',stack-state))))
-
-(defmacro e4:with-empty-stack (&rest forms)
-  "flush the stack and evaluate given forms"
-  (e4:stack-flush)
-  `(progn ,@forms))
-
 ;;; predefined e4 words (incomplete FORTH-83 standart)
 
 ;; basic binary and unary operators
@@ -156,5 +141,9 @@
 (e4.word-register
  '.s (lambda () (message "<%d> %s\n" (length e4.stack) e4.stack)))
 
+;;;; advanced api ;;;;
 
-
+;; it is included into E4 package only temporary.
+;; those functions are completely optional, so
+;; wise choice lies in separation.
+(load-file "./xe4.el")
