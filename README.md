@@ -21,7 +21,7 @@ Forget about performance and think of fibonacci definition.<br>
 We can express it in forth like that:
 ```forth
 \ readable even in form of 1-liner
-: fib 1- DUP 2 > IF DUP RECURSE SWAP 1- RECURSE + ENDIF ;
+: fib 1- DUP 1 > IF DUP RECURSE SWAP 1- RECURSE + ENDIF ;
 \ call & print
 10 fib .
 ```
@@ -30,13 +30,13 @@ Translate to lisp:
 ```elisp
 (defun fib (n)
   (let ((n (1- n)))
-    (if (> n 2)
+    (if (> n 1)
 	(+ (fib n)
 	   (fib (1- n)))
       n)))
 
 ;; we can write this in 1 line and end up in unreadable code:
-(defun fib (n) (let ((n (1- n))) (if (> n 2) (+ (fib n) (fib (1- n))) n)))
+(defun fib (n) (let ((n (1- n))) (if (> n 1) (+ (fib n) (fib (1- n))) n)))
 
 ;; call & print
 (message "%s" (fib 10))
@@ -45,7 +45,7 @@ Translate to lisp:
 E4 to the rescue:
 ```elisp
 ;; define
-(e4: { fib 1- DUP 2 > IF DUP fib SWAP 1- fib + ENDIF })
+(e4: { fib 1- DUP 1 > IF DUP fib SWAP 1- fib + ENDIF })
 ;; call & print
 (e4: 10 fib ..)
 ```
@@ -106,6 +106,12 @@ or equal to the GForth in both semantics and spelling.<br>
     <td>..</td>
     <td>exit compilation mode, start interpreting</td>
     <td>dot (.) is by Emacs lisp interpreter to denote cons pairs</td>
+  </tr>
+  <tr>
+    <td>recurse</td>
+    <td>word symbol</td>
+    <td>call word recursively</td>
+    <td>because you want to call foo by foo, not by recurse</td>
   </tr>
 </table>
 

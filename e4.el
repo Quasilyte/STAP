@@ -52,10 +52,10 @@
     (if fn
 	(if (functionp fn)
 	    (funcall fn) ; predefined word
-	  ;; there is also an option to prepend fn instructions (tokens)
-	  ;; to global token list. this can be faster and could lead
-	  ;; to nearly free recursive calls (need profiling though)
-	  (e4:from-list fn)) ; user-defined word
+	  ;; this needs fixing, we append excessive dummy :token
+	  ;; because our do-loop will discard first element of
+	  ;; tokens list when this function exits
+	  (setq e4.tokens (append '(:token) fn (cdr e4.tokens))))
       (error (format "undefined e4 word: `%s'" word)))))
 
 ;; maybe this function can be optimised
@@ -151,7 +151,16 @@
 ;;; data stack manipulators
 
 (e4.word-register
+ 'DROP (lambda () (e4.stack-pop)))
+
+(e4.word-register
  'DUP (lambda () (e4.stack-push (car e4.stack))))
+
+(e4.word-register
+ 'SWAP (lambda ()
+	 (setq e4.stack (append (nreverse (list (e4.stack-pop)
+						(e4.stack-pop)))
+				e4.stack))))
 
 (e4.word-register
  'DEPTH (lambda () (e4.stack-push (length e4.stack))))
@@ -188,5 +197,4 @@
 (load-file
  (expand-file-name "xe4.el" (file-name-directory (or load-file-name
 						     buffer-file-name))))
-
 

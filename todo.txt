@@ -1,0 +1,1 @@
+* signal error if fuction definition is empty
