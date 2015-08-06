@@ -36,7 +36,8 @@
   (puthash word fn e4.dictionary))
 
 (defun e4.user-word-register (word)
-  (setq e4.new-word-symbol word)
+  "put user-defined word in dictionary"
+  (setq e4.new-word-symbol word) ; for compiling function body
   (puthash word '() e4.dictionary))
 
 (defun e4.word-exec (word)
@@ -44,12 +45,11 @@
   (let ((fn (gethash word e4.dictionary)))
     (if fn
 	(if (functionp fn)
-	    (funcall fn)
-	  (e4:from-list fn))
-	    ;(setq e4.stack (append (e4:from-list fn) e4.stack))))
-	  ;(e4:from-list fn))
+	    (funcall fn) ; predefined word
+	  (e4:from-list fn)) ; user-defined word
       (error (format "undefined e4 word: `%s'" word)))))
 
+;; maybe this function can be optimised
 (defun e4.call-with-arity (fn arity)
   "call lisp function with args passed from the e4 stack"
   (let ((args (nreverse (subseq e4.stack 0 arity))))
@@ -59,20 +59,24 @@
 ;;; evaluation
 
 (defun e4.next-token ()
+  "throw away current token and take another"
   (setq e4.tokens (cdr e4.tokens)))
 
 (defun e4.reload-environment (tokens)
-  (setq e4.eval-mode :interpret)
+  "prepare E4 environment to run expressions"
+  (setq e4.eval-mode :interpret) ; we must always start from this mode
   (setq e4.tokens tokens))
 
 (defmacro e4.do-with-tokens (&rest forms)
+  "evaluate passed forms through tokens (token binding passed implicitly)"
   `(while e4.tokens
-    ,@forms
-    (e4.next-token)))
+     (let ((token (car e4.tokens))) 
+       ,@forms ; code inside can use current token via `token'
+       (e4.next-token))))
 
 (defun e4.interpreting-eval (word)
   "process word while in interpreter mode"
-  (if (eq '{ word)
+  (if (eq '{ word) ; mode switching symbol
       (setq e4.eval-mode :compile)
     (funcall (if (symbolp word)
 		 'e4.word-exec
@@ -81,13 +85,14 @@
 
 (defun e4.compiling-eval (word)
   "process word while in compiler mode"
-  (if (eq '} word)
+  (if (eq '} word) ; mode switching symbol
       (e4.finish-word-compilation)
     (if e4.new-word-symbol
 	(push word (gethash e4.new-word-symbol e4.dictionary))
       (e4.user-word-register word))))
 
 (defun e4.finish-word-compilation ()
+  "finalize word compilation and enter interpretation mode"
   (puthash e4.new-word-symbol
 	   (nreverse (gethash e4.new-word-symbol e4.dictionary))
 	   e4.dictionary)
@@ -104,17 +109,17 @@
   "take some e4-forth words, evaluate them and return resulted stack"
   (e4.reload-environment words)
   (e4.do-with-tokens
-   (let ((token (car e4.tokens)))
-     (when (not (listp token))
-       (funcall (if (eq :interpret e4.eval-mode)
-		    'e4.interpreting-eval
-		  'e4.compiling-eval)
-		token))))
-  e4.stack)
+   (when (not (listp token)) ; if it is a list, then it is a comment
+     (funcall (if (eq :interpret e4.eval-mode)
+		  'e4.interpreting-eval
+		'e4.compiling-eval)
+	      token)))
+  e4.stack) ; resulting E4 stack is returned
 
 ;;; advanced api
 
 (defun e4:stack-flush ()
+  "make E4 stack empty"
   (setq e4.stack '()))
 
 (defmacro e4:with-stack-rollback (&rest forms)
@@ -137,7 +142,7 @@
   (let ((word (car pair)) (arity (nth 1 pair)))
     (e4.word-register
      word `(lambda ()
-	    (e4.stack-push (e4.call-with-arity ',word ',arity))))))
+	     (e4.stack-push (e4.call-with-arity ',word ',arity))))))
 
 (e4.word-register
  'DUP (lambda () (e4.stack-push (car e4.stack))))
@@ -146,7 +151,10 @@
  'DEPTH (lambda () (e4.stack-push (length e4.stack))))
 
 (e4.word-register
- '.. (lambda () (message "%s" (e4.stack-pop))))
+ '.. (lambda () (message 'fd)  (message "%s" (e4.stack-pop))))
 
 (e4.word-register
  '.s (lambda () (message "<%d> %s\n" (length e4.stack) e4.stack)))
+
+
+
