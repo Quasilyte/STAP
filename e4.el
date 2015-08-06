@@ -8,6 +8,7 @@
 
 ;; e4 environment variables
 (setq e4.stack '() ; main data stack for execution
+      e4.tokens '() ; usually this is an input data for interpreter
       e4.dictionary (make-hash-table :test 'equal) ; all defined words
       e4.eval-mode :interpret
       e4.new-word-symbol nil)
@@ -57,6 +58,18 @@
 
 ;;; evaluation
 
+(defun e4.next-token ()
+  (setq e4.tokens (cdr e4.tokens)))
+
+(defun e4.reload-environment (tokens)
+  (setq e4.eval-mode :interpret)
+  (setq e4.tokens tokens))
+
+(defmacro e4.do-with-tokens (&rest forms)
+  `(while e4.tokens
+    ,@forms
+    (e4.next-token)))
+
 (defun e4.interpreting-eval (word)
   "process word while in interpreter mode"
   (if (eq '{ word)
@@ -89,13 +102,14 @@
 ;; this is mostly for internal usage, but can be useful for public API as well
 (defun e4:from-list (words)
   "take some e4-forth words, evaluate them and return resulted stack"
-  (setq e4.eval-mode :interpret)
-  (dolist (word words)
-    (when (not (listp word))
-      (funcall (if (eq :interpret e4.eval-mode)
-		   'e4.interpreting-eval
-		 'e4.compiling-eval)
-	       word)))
+  (e4.reload-environment words)
+  (e4.do-with-tokens
+   (let ((token (car e4.tokens)))
+     (when (not (listp token))
+       (funcall (if (eq :interpret e4.eval-mode)
+		    'e4.interpreting-eval
+		  'e4.compiling-eval)
+		token))))
   e4.stack)
 
 ;;; advanced api
@@ -133,3 +147,6 @@
 
 (e4.word-register
  '.. (lambda () (message "%s" (e4.stack-pop))))
+
+(e4.word-register
+ '.s (lambda () (message "<%d> %s\n" (length e4.stack) e4.stack)))

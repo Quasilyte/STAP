@@ -6,7 +6,7 @@ It follows the FORTH-83 standard (required word set),<br>
 but not in all aspects. <br>
 
 <h3>Features</h3>
-* inlinable right into the lisp code (full Emacs integration)
+* inlining right into the lisp code (full Emacs integration)
 * utilities like stack rollbacks after multiple evaluations
 
 <h3>Examples</h3>
