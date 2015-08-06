@@ -9,6 +9,45 @@ but not in all aspects. <br>
 * inlining right into the lisp code (full Emacs integration)
 * utilities like stack rollbacks after multiple evaluations
 
+<h3>Rationale</h3>
+Because something can be better expressed in one language/style<br>
+while other tasks are suited for something else well.<br>
+<br>
+Say we want to find `fib(n)` number.<br>
+Forget about performance and think of fibonacci definition.<br>
+
+We can express it in forth like that:
+```forth
+\ readable even in form of 1-liner
+: fib 1- DUP 2 > IF DUP RECURSE SWAP 1- RECURSE + ENDIF ;
+\ call & print
+10 fib .
+```
+
+Translate to lisp:
+```elisp
+(defun fib (n)
+  (let ((n (1- n)))
+    (if (> n 2)
+	(+ (fib n)
+	   (fib (1- n)))
+      n)))
+
+;; we can write this in 1 line and end up in unreadable code:
+(defun fib (n) (let ((n (1- n))) (if (> n 2) (+ (fib n) (fib (1- n))) n)))
+
+;; call & print
+(message "%s" (fib 10))
+```
+
+E4 to the rescue:
+```elisp
+;; define
+(e4: { fib 1- DUP 2 > IF DUP fib SWAP 1- fib + ENDIF })
+;; call & print
+(e4: 10 fib ..)
+```
+
 <h3>Examples</h3>
 
 ```elisp
