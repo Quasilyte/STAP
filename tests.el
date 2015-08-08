@@ -4,5 +4,21 @@
 		 '(flush-stack-before-eval . t))
 
 (xe4:
- { fib 1- DUP 1 > IF DUP fib SWAP 1- fib + ENDIF }
- 8 fib)
+ ( define sequence of "foo" "bar" "baz" )
+ { sequence-reset
+   { sequence-next
+     "foo"
+     { sequence-next
+       "bar"
+       { sequence-next
+         "baz" } } } }
+ { sequence-next sequence-reset }
+       
+ ( prints "for", "bar", "baz" )
+ sequence-reset
+ sequence-next ..
+ sequence-next ..
+ sequence-next ..
+ sequence-reset
+ ( and we can now use sequence-next again ))
+ 

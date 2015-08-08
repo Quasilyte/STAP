@@ -146,7 +146,7 @@ or equal to the GForth in both semantics and spelling.<br>
     <td>.</td>
     <td>..</td>
     <td>exit compilation mode, start interpreting</td>
-    <td>dot (.) is by Emacs lisp interpreter to denote cons pairs</td>
+    <td>dot (.) is used by Emacs lisp interpreter to denote cons pairs</td>
   </tr>
   <tr>
     <td>recurse</td>
