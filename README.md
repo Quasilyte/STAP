@@ -56,37 +56,67 @@ E4 to the rescue:
 ```
 
 <h3>Examples</h3>
+Check out `tests.el` to see more.<br>
+
 
 ```elisp
+;; instead of using plain `e4:', you should use `xe4:'
+;; modify options for E4 execution via `xe4:'
+(xe4:set-options '(return-stack-after-eval . t)
+		 '(flush-stack-before-eval . t))
+
 ;; just eval code and print resulting E4 stack:
 (message "%s"
-	 (e4: 4 4 + DUP *)) ; => "64"
+	 (xe4: 4 4 + DUP *)) ; => "64"
 
-;; now stack has "64" in it, but we can clear
-;; it this way: (e4:stack-flush).
-;; nah, it is boring, here is a better way:
-(e4:with-empty-stack
- (e4: 
-  2 2 =)) ; => '(-1) 
+;; remember we turned on stack returning?
+;; here we get a list of 1 elements
+(xe4: 2 2 =) ; => '(-1) 
 
-;; for now I am a bit lazy to write more comments,
-;; but here is (at least) some more concrete examples:
-(e4:
- { lucky ( -- n)  7 }
- lucky .. ( prints 7 )
- lucky DEPTH ..)
+;; we can pop and print top stack element by `..'
+(xe4:
+ { lucky ( -- n)  777 }
+ lucky .. ( prints 777 )
+ lucky DEPTH .. ( prints 1 ))
 
-(e4:stack-flush)
+;; to print entire stack and its length (w/o flush)
+(xe4: 1 2 3 4 .s)
 
-(xe4:with-empty-stack
- (e4:
-  { stack-print ( pop and print every element in the data stack )
-  DEPTH 0 > IF .. stack-print ENDIF }
+;; we can print and flush stack with this recursive word
+(xe4:
+ {
+   .s+flush
+   DEPTH 0 > IF
+   .. .s+flush
+   ENDIF
+ }
+ ( print 1, 2, 3, 2, 1 )
+ 1 2 3 2 1 .s+flush)
 
-  ( print 1, 2, 3, 2 and 1 again )
-  1 2 3 2 1 stack-print DUP DUP DROP DROP))
+;; the { } definitions are flexible and are used for
+;; variables, functions and lambdas
+(xe4:
+ ( words are used for both function and variable declarations )
+ { foo 1 } { bar 10 }
 
-(setq result (car (e4: 1000 10 / 10 /)))
+ foo
+
+ ( word can be reassigned )
+ { foo bar }
+ { bar 20 }
+ 
+ ( but such an assignment is merely a substitution,
+   not a copy, so foo returns 20 as its value )
+ foo)
+
+;; using { } to create nested definitions
+(xe4:
+ { var "magic" { var 777 } }
+ ( first call gives a "magic", the rest 2 return 777 )
+ var var var)
+
+;; and it is really easy to use results from E4 in calling code
+(setq result (car (xe4: 1000 10 / 10 /)))
 result ; => 10
 ```
 
