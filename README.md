@@ -4,6 +4,7 @@
 Emacs Forth is a partial Forth implementation written in lisp.<br>
 It uses some of the FORTH-83 standard (required word set)<br>
 ideas, but our Forth is far Lispier. <br>
+E4 is heavily functional language (you **must** check out `examples.el`!).<br>
 
 <h3>Features</h3>
 * inlining right into the Lisp code (full Emacs integration)
@@ -54,8 +55,7 @@ E4 to the rescue:
 ```
 
 <h3>Examples</h3>
-Check out `tests.el` to see more.<br>
-
+Check out `examples.el` to see more.<br>
 
 ```elisp
 ;; instead of using plain `e4:', you should use `xe4:'

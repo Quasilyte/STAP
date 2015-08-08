@@ -1,1 +1,30 @@
-* xe4 -- add invocation which do not return data stack
+=================
+=== DEBATABLE ===
+
+* loops:
+  without interpreter support iteration kit is limited
+  to recursion (not that bad), but there is also
+  few ways to control the flow (sequences are good for
+  small number of iterations, not for 10+ cycles)
+
+* compile-time substitutions:
+  right now there is no way to mutate a variable
+  using its value
+  { x 10 } => x = 10
+  but how to make it 9 or 11?
+  it is related to some kind of "value copy"
+  or assignment by value (now only by name)
+
+============
+=== MUST ===
+
+* vectors:
+  user can define a vector using [ ] syntax,
+  but there is no functions for them,
+  they are useless until some language support is done
+
+=============
+=== FIXME ===
+
+
+

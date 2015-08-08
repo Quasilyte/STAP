@@ -1,7 +1,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; examples of E4 usage (see README also) ;;;;;
 
-;;I am not insist on this kind of E4 formatting,
+;; I am not insist on this kind of E4 formatting,
 ;; it will take some time to get the best one or
 ;; we can stick to Forth guidelines
 ;;
