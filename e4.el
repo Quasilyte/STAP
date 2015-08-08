@@ -188,7 +188,7 @@
  '.. (lambda () (message "%s" (e4.stack-pop))))
 
 (e4.word-register
- '.s (lambda () (message "<%d> %s\n" (length e4.stack) e4.stack)))
+ '.s (lambda () (message "<%d> %s" (length e4.stack) e4.stack)))
 
 ;;; flow controlling words
 
