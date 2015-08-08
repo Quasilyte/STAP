@@ -23,6 +23,10 @@
   but there is no functions for them,
   they are useless until some language support is done
 
+* quotations:
+  find out all behavior behinds ' ` , tokens inside
+  E4 code and document it.
+
 =============
 === FIXME ===
 

@@ -69,6 +69,14 @@
      (let ((top (car e4.stack)))
        (e4.stack-push (e4.call-with-arity ,type-switch 2)))))
 
+(defmacro e4.collecting-lambda (factory)
+  `(lambda ()
+     (let* ((n (e4.stack-pop)) (array (,factory n 0)))
+	  (while (> n 0)
+	    (setq n (1- n))
+	    (aset array n (e4.stack-pop)))
+	  (e4.stack-push array))))
+
 ;;; utils
 
 (defmacro e4.do-nothing ()
@@ -157,9 +165,9 @@
      (funcall (if (eq :interpret e4.eval-mode)
 		  'e4.interpreting-eval
 		'e4.compiling-eval)
-	      token)))) 
+	      token))))
 
-;;;; predefined e4 words (incomplete FORTH-83 standart) ;;;;
+;;;; predefined e4 words ;;;;
 
 ;;; fundamentals
 
@@ -220,19 +228,31 @@
 (e4.word-register
  'ENDIF (e4.do-nothing))
 
-;;; sequence operations
-
-;; E4 has only strings and vectors as sequences
+;;; sequence operations (vectors & strings)
 
 (e4.word-register
  'NTH (lambda ()
 	(let ((index (e4.stack-pop)))
 	  (e4.stack-push (elt (car e4.stack) index)))))
 
-;; can be used for strings as well
 (e4.word-register
  'LEN (lambda ()
 	(e4.stack-push (length (car e4.stack)))))
+
+(e4.word-register
+ 'SET (lambda ()
+	(let ((index (e4.stack-pop)) (value (e4.stack-pop)))
+	  (aset (car e4.stack) index value))))
+
+(e4.word-register
+ 'SPLIT (lambda ()
+	  (setq e4.stack (append (e4.stack-pop) e4.stack))))
+
+(e4.word-register
+ 'VEC (e4.collecting-lambda make-vector))
+
+(e4.word-register
+ 'STR (e4.collecting-lambda make-string))
 
 ;;;; advanced api ;;;;
 

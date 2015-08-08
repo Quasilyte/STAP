@@ -74,4 +74,13 @@
 (xe4: [0 1 2] LEN) ; => (3 [0 1 2])
 (xe4: "measure me!" LEN) ; => (11 "measure me")
 
+(xe4: [0 1 2] SPLIT DROP) ; => (1 2)
+(xe4: "qwe" SPLIT) ; => (113 119 101)
+
+(xe4: 0 1 2 3 VEC) ; => ([0 1 2])
+(xe4: 113 119 101 3 STR) ; => ("qwe")
+
+(xe4: [0 0] "foo" 0 SET "bar" 1 SET) ; => (["foo" "bar"])
+(xe4: "Aa" ?a 0 SET ?A 1 SET) ; => ("aA")
+
 
