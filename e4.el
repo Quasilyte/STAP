@@ -142,14 +142,8 @@
   (setq e4.eval-mode :interpret) ; we must always start from this mode
   (setq e4.tokens tokens))
 
-;; e4 should be evaluated by users with this
-(defmacro e4: (&rest words)
-  "take some e4-forth words, evaluate them and return resulted stack"
-  `(e4:from-list ',words))
-
-;; this is mostly for internal usage, but can be useful for public API as well
-(defun e4:from-list (words)
-  "take some e4-forth words, evaluate them and return resulted stack"
+(defun e4: (words)
+  "take some E4 words as a list, evaluate them"
   (e4.reload-environment words)
   (e4.while-token
    (if (listp token)
@@ -157,8 +151,7 @@
      (funcall (if (eq :interpret e4.eval-mode)
 		  'e4.interpreting-eval
 		'e4.compiling-eval)
-	      token)))
-   e4.stack) ; resulting E4 stack is returned
+	      token)))) 
 
 ;;;; predefined e4 words (incomplete FORTH-83 standart) ;;;;
 
