@@ -7,6 +7,11 @@
 ;;
 ;; e.g. `e4:' is exported, `e4.stack' is not 
 
+;; word -- anything in `e4.dictionary'
+;; tag -- something look like word, but defined at implementation level
+;;
+;; e.g. `{' and `}' are tags, but `IF' is a word
+
 ;;;; data section ;;;;
 
 (defconst e4.TRUE -1 "Forth usually returns -1 as truth value")
@@ -15,9 +20,10 @@
 ;; e4 environment variables
 (setq e4.stack '() ; main data stack for execution
       e4.tokens '() ; usually this is an input data for interpreter
+      e4.new-word '() ; car is word-symbol, cdr is its body
       e4.dictionary (make-hash-table :test 'equal) ; all defined words
       e4.eval-mode :interpret
-      e4.new-word-symbol nil)
+      e4.nest-level 0)
 
 ;;;; functions ;;;;
 
@@ -41,11 +47,6 @@
   "extend or update word dictionary" 
   (puthash word fn e4.dictionary))
 
-(defun e4.user-word-register (word)
-  "put user-defined word in dictionary"
-  (setq e4.new-word-symbol word) ; for compiling function body
-  (puthash word '() e4.dictionary))
-
 (defun e4.word-exec (word)
   "invoke word associated lambda"
   (let ((fn (gethash word e4.dictionary)))
@@ -62,11 +63,15 @@
     (setq e4.stack (subseq e4.stack arity))
     (apply fn args)))
 
-;;; evaluation
+;;; utils
 
 (defmacro e4.do-nothing ()
   "literally, do nothing at all"
   '(lambda ()))
+
+(defmacro e4.nest-level-modify (mutator)
+  "change `nesl-level' value bu applying mutator function (usually 1+ or 1-)"
+  `(setq e4.nest-level (,mutator e4.nest-level)))
 
 (defun e4.next-token ()
   "throw away current token and take another"
@@ -77,11 +82,6 @@
   `(progn
      (e4.next-token)
      ,action))
-
-(defun e4.reload-environment (tokens)
-  "prepare E4 environment to run expressions"
-  (setq e4.eval-mode :interpret) ; we must always start from this mode
-  (setq e4.tokens tokens))
 
 (defmacro e4.while-token (&rest forms)
   "evaluate passed forms through tokens (token binding passed implicitly)"
@@ -96,6 +96,8 @@
       (e4.next-token)
       (when ,termination-p (throw 'break nil)))))
 
+;;; interpret-related
+
 (defun e4.interpreting-eval (word)
   "process word while in interpreter mode"
   (if (eq '{ word) ; mode switching symbol
@@ -104,22 +106,41 @@
 	(e4.word-exec word)
       (e4.next-token-do (e4.stack-push word)))))
 
-(defun e4.compiling-eval (word)
-  "process word while in compiler mode"
-  (if (eq '} word) ; mode switching symbol
-      (e4.finish-word-compilation)
-    (if e4.new-word-symbol
-        (push word (gethash e4.new-word-symbol e4.dictionary))
-      (e4.user-word-register word)))
-  (e4.next-token))
+;;; compile-related
+
+(defun e4.new-word-set (word)
+  "put user-defined word in dictionary"
+  (setq e4.new-word (cons word nil)))
+
+(defun e4.compilation-closing-tag ()
+  "handle compilation terminating tag (it should be balanced with open tag)"
+  (cond ((= 0 e4.nest-level) (e4.finish-word-compilation))
+	(t (e4.nest-level-modify 1-) ; nested word definition end
+	   (push word e4.new-word))))
 
 (defun e4.finish-word-compilation ()
   "finalize word compilation and enter interpretation mode"
-  (puthash e4.new-word-symbol
-	   (nreverse (gethash e4.new-word-symbol e4.dictionary))
-	   e4.dictionary)
+  (let ((new-word (nreverse e4.new-word)))
+    (puthash (car new-word) (cdr new-word) e4.dictionary))
   (setq e4.eval-mode :interpret
-	e4.new-word-symbol nil))
+	e4.new-word '()))
+
+(defun e4.compiling-eval (word)
+  "process word while in compiler mode"
+  (if (eq '} word) 
+      (e4.compilation-closing-tag)
+    (cond (e4.new-word
+	   (when (eq '{ word) (e4.nest-level-modify 1+)) ; nested word definition ?
+	   (push word e4.new-word))
+	  (t (e4.new-word-set word))))
+  (e4.next-token))
+
+;;; evaluation
+
+(defun e4.reload-environment (tokens)
+  "prepare E4 environment to run expressions"
+  (setq e4.eval-mode :interpret) ; we must always start from this mode
+  (setq e4.tokens tokens))
 
 ;; e4 should be evaluated by users with this
 (defmacro e4: (&rest words)

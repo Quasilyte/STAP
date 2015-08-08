@@ -1,5 +1,1 @@
-* signal error if fuction definition is empty
 * xe4 -- add invocation which do not return data stack
-
-=== bugs ===
-* enable nested compilation (by finding matching closing tag, not first on)
