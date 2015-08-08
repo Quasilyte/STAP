@@ -14,6 +14,7 @@ E4 is heavily functional language (you **must** check out `examples.el`!).<br>
 * [almost] stackless recursion
 * nested definitions (delayed and partial compilation)
 * neat literals for scalars (strings, vectors) thanks to lisp
+* overloaded operators (+, =, etc)
 
 <h3>Rationale</h3>
 Because something can be expressed better in one language/style<br>

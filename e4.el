@@ -63,6 +63,12 @@
     (setq e4.stack (subseq e4.stack arity))
     (apply fn args)))
 
+(defmacro e4.overloaded-op-lambda (type-switch arity)
+  "create lambda calling lisp function returned from `type-switch'"
+  `(lambda ()
+     (let ((top (car e4.stack)))
+       (e4.stack-push (e4.call-with-arity ,type-switch 2)))))
+
 ;;; utils
 
 (defmacro e4.do-nothing ()
@@ -166,18 +172,12 @@
 	     (e4.stack-push (e4.call-with-arity ',word ',arity))))))
 
 (e4.word-register
- '+ `(lambda ()
-       (let* ((top (car e4.stack))
-	      (lisp-fn (cond ((numberp top) '+)
-			     ((stringp top) 'concat))))
-	 (e4.stack-push (e4.call-with-arity lisp-fn 2)))))
+ '+ (e4.overloaded-op-lambda (cond ((numberp top) '+)
+				   ((stringp top) 'concat)) 2))
 
 (e4.word-register
- '= `(lambda ()
-       (let* ((top (car e4.stack))
-	      (lisp-fn (cond ((numberp top) '=)
-			     ((stringp top) 'string=))))
-	 (e4.stack-push (e4.call-with-arity lisp-fn 2)))))
+ '= (e4.overloaded-op-lambda (cond ((numberp top) '=)
+				   ((stringp top) 'string=)) 2))
 
 ;;; data stack manipulators
 
@@ -228,4 +228,3 @@
 (load-file
  (expand-file-name "xe4.el" (file-name-directory (or load-file-name
 						     buffer-file-name))))
-
