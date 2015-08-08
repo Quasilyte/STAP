@@ -220,6 +220,20 @@
 (e4.word-register
  'ENDIF (e4.do-nothing))
 
+;;; sequence operations
+
+;; E4 has only strings and vectors as sequences
+
+(e4.word-register
+ 'NTH (lambda ()
+	(let ((index (e4.stack-pop)))
+	  (e4.stack-push (elt (car e4.stack) index)))))
+
+;; can be used for strings as well
+(e4.word-register
+ 'LEN (lambda ()
+	(e4.stack-push (length (car e4.stack)))))
+
 ;;;; advanced api ;;;;
 
 ;; it is included into E4 package only temporary.

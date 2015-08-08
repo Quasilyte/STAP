@@ -65,3 +65,13 @@
  { iterate next "baz" = IF ELSE _ iterate ENDIF }
  { _ DUP 2 * }
  4 iterate .s ( => 4 8 16 ))
+
+;;; the most recent added fuctions below
+
+(xe4: [6 5] 1 NTH SWAP DROP) ; => (5)
+(xe4: "speed" 0 NTH) ; => (115 "speed")
+
+(xe4: [0 1 2] LEN) ; => (3 [0 1 2])
+(xe4: "measure me!" LEN) ; => (11 "measure me")
+
+
