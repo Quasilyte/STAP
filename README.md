@@ -2,19 +2,17 @@
 
 <h3>Short description</h3>
 Emacs Forth is a partial Forth implementation written in lisp.<br>
-It follows the FORTH-83 standard (required word set),<br>
-but not in all aspects. <br>
-Execution speed is, obviously, is lower than the host language<br>
-capabilities, but not significantly (for now we are 30% slower than<br>
-Emacs lisp itself, our recursion produce more garbage, but no<br>
-stack grow ever involved).
+It uses some of the FORTH-83 standard (required word set)<br>
+ideas, but our Forth is far Lispier. <br>
 
 <h3>Features</h3>
-* inlining right into the lisp code (full Emacs integration)
-* utilities like stack rollbacks after multiple evaluations
+* inlining right into the Lisp code (full Emacs integration)
+* utilities like stack rollbacks after multiple evaluations (state control)
 * case-sensitive reader (most Forths are not)
 * conditionals are not compile-only words
 * [almost] stackless recursion
+* nested definitions (delayed and partial compilation)
+* neat literals for scalars (strings, vectors) thanks to lisp
 
 <h3>Rationale</h3>
 Because something can be expressed better in one language/style<br>
