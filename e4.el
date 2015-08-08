@@ -157,13 +157,27 @@
 
 ;;; fundamentals
 
-;; basic binary and unary operators
-(dolist (pair '((+ 2) (- 2) (/ 2) (* 2) (= 2) (< 2) (> 2)
+;; basic binary and unary operators for numbers
+(dolist (pair '((- 2) (/ 2) (* 2) (< 2) (> 2)
 		(1+ 1) (1- 1)))
   (let ((word (car pair)) (arity (nth 1 pair)))
     (e4.word-register
      word `(lambda ()
 	     (e4.stack-push (e4.call-with-arity ',word ',arity))))))
+
+(e4.word-register
+ '+ `(lambda ()
+       (let* ((top (car e4.stack))
+	      (lisp-fn (cond ((numberp top) '+)
+			     ((stringp top) 'concat))))
+	 (e4.stack-push (e4.call-with-arity lisp-fn 2)))))
+
+(e4.word-register
+ '= `(lambda ()
+       (let* ((top (car e4.stack))
+	      (lisp-fn (cond ((numberp top) '=)
+			     ((stringp top) 'string=))))
+	 (e4.stack-push (e4.call-with-arity lisp-fn 2)))))
 
 ;;; data stack manipulators
 
