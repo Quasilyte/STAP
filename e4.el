@@ -51,11 +51,8 @@
   (let ((fn (gethash word e4.dictionary)))
     (if fn
 	(if (functionp fn)
-	    (funcall fn) ; predefined word
-	  ;; this needs fixing, we append excessive dummy :token
-	  ;; because our do-loop will discard first element of
-	  ;; tokens list when this function exits
-	  (setq e4.tokens (append '(:token) fn (cdr e4.tokens))))
+	    (e4.next-token-do (funcall fn)) ; predefined word
+	  (setq e4.tokens (append fn (cdr e4.tokens))))
       (error (format "undefined e4 word: `%s'" word)))))
 
 ;; maybe this function can be optimised
@@ -75,41 +72,46 @@
   "throw away current token and take another"
   (setq e4.tokens (cdr e4.tokens)))
 
+(defmacro e4.next-token-do (action)
+  "select next token, perform `action'"
+  `(progn
+     (e4.next-token)
+     ,action))
+
 (defun e4.reload-environment (tokens)
   "prepare E4 environment to run expressions"
   (setq e4.eval-mode :interpret) ; we must always start from this mode
   (setq e4.tokens tokens))
 
-(defmacro e4.do-with-tokens (&rest forms)
+(defmacro e4.while-token (&rest forms)
   "evaluate passed forms through tokens (token binding passed implicitly)"
   `(while e4.tokens
      (let ((token (car e4.tokens)))
-       ,@forms ; code inside can use current token via `token'
-       (e4.next-token))))
+       ,@forms)))
 
 (defmacro e4.skip-tokens-until (termination-p)
   "skip current token and keep skipping until `termination-p' is t"
   `(catch 'break
-     (e4.next-token) ; skip callee token
-     (e4.do-with-tokens
+     (e4.while-token
+      (e4.next-token)
       (when ,termination-p (throw 'break nil)))))
 
 (defun e4.interpreting-eval (word)
   "process word while in interpreter mode"
   (if (eq '{ word) ; mode switching symbol
-      (setq e4.eval-mode :compile)
-    (funcall (if (symbolp word)
-		 'e4.word-exec
-	       'e4.stack-push)
-	     word)))
+      (e4.next-token-do (setq e4.eval-mode :compile))
+    (if (symbolp word)
+	(e4.word-exec word)
+      (e4.next-token-do (e4.stack-push word)))))
 
 (defun e4.compiling-eval (word)
   "process word while in compiler mode"
   (if (eq '} word) ; mode switching symbol
       (e4.finish-word-compilation)
     (if e4.new-word-symbol
-	(push word (gethash e4.new-word-symbol e4.dictionary))
-      (e4.user-word-register word))))
+        (push word (gethash e4.new-word-symbol e4.dictionary))
+      (e4.user-word-register word)))
+  (e4.next-token))
 
 (defun e4.finish-word-compilation ()
   "finalize word compilation and enter interpretation mode"
@@ -128,13 +130,14 @@
 (defun e4:from-list (words)
   "take some e4-forth words, evaluate them and return resulted stack"
   (e4.reload-environment words)
-  (e4.do-with-tokens
-   (when (not (listp token)) ; if it is a list, then it is a comment
+  (e4.while-token
+   (if (listp token)
+       (e4.next-token) ; if it is a list, then it is a comment
      (funcall (if (eq :interpret e4.eval-mode)
 		  'e4.interpreting-eval
 		'e4.compiling-eval)
 	      token)))
-  e4.stack) ; resulting E4 stack is returned
+   e4.stack) ; resulting E4 stack is returned
 
 ;;;; predefined e4 words (incomplete FORTH-83 standart) ;;;;
 
@@ -159,7 +162,7 @@
 (e4.word-register
  'SWAP (lambda ()
 	 (setq e4.stack (append (nreverse (list (e4.stack-pop)
-						(e4.stack-pop)))
+		       			(e4.stack-pop)))
 				e4.stack))))
 
 (e4.word-register
