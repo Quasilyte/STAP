@@ -69,13 +69,18 @@
 ;; example #5
 ;; iterating over vector
 (xe4:
+ ( both items will be iteratable )
  { v [ 10 20 30 ] }
- 
- { spine-length SWAP LEN ROT }
- { each spine-length DUP ROT < IF _ 1+ each ENDIF }
- 
- { _ DUP .. }
- v 0 each)
+ { s "foxey" }
+
+ { spine-length SWAP LEN ROT }             ( drop counter )
+ { each spine-length DUP ROT < IF _ 1+ each ELSE DROP ENDIF }
+
+ ( modify current index, set value of 97 + index )
+ { _ DUP ROT SWAP DUP 97 + SET SWAP .s }
+
+ v 0 each
+ s 1 each) ; => ("fbcde" [97 98 99])
 
 ;;; the most recent added fuctions below
 
@@ -94,8 +99,8 @@
 (xe4: 0 1 2 3 VEC) ; => ([0 1 2])
 (xe4: 113 119 101 3 STR) ; => ("qwe")
 
-(xe4: [0 0] "foo" 0 SET "bar" 1 SET) ; => (["foo" "bar"])
-(xe4: "Aa" ?a 0 SET ?A 1 SET) ; => ("aA")
+(xe4: [0 0] 0 "foo" SET 1 "bar" SET) ; => (["foo" "bar"])
+(xe4: "Aa" 0 ?a SET 1 ?A SET) ; => ("aA")
 
 (xe4: [[8]] 0 NTH 0 NTH) ; => (8 [8] [[8]])
 

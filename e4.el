@@ -252,7 +252,7 @@
 
 (e4.word-register
  'SET (lambda ()
-	(let ((index (e4.stack-pop)) (value (e4.stack-pop)))
+	(let ((value (e4.stack-pop)) (index (e4.stack-pop)))
 	  (aset (car e4.stack) index value))))
 
 (e4.word-register
