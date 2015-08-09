@@ -200,6 +200,14 @@
 (e4.word-register
  'DROP (lambda () (e4.stack-pop)))
 
+;; it should be faster than `e4.stack-reorder-lambda',
+;; but benchmarks are needed.
+(e4.word-register
+ 'NIP (lambda ()
+	(let ((top (e4.stack-pop)))
+	  (e4.stack-pop) ; drop the second element
+	  (setq e4.stack (cons top e4.stack)))))
+
 (e4.word-register
  'DUP (lambda () (e4.stack-push (car e4.stack))))
 

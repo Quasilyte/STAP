@@ -89,6 +89,9 @@
  "func" SEE ( func: (1 2 3) )
  "concat" SEE ( word `concat' is not defined))
 
+(xe4: 1 2 3 4 NIP) ; => (4 2 1)
+(xe4: 1 2 3 4 NIP NIP) ; => (4 1)
+
 (xe4: 4 3 2 1 TUCK) ; => (1 2 1 3 4)
 (xe4: 0 1 TUCK TUCK) ; => (1 0 1 1)
 
