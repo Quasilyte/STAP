@@ -12,22 +12,30 @@
 ;;
 ;; e.g. `{' and `}' are tags, but `IF' is a word
 
-;;;; data section ;;;;
+;;;; [ DATA SECTION ] ;;;;
 
 (defconst e4.TRUE -1 "Forth usually returns -1 as truth value")
 (defconst e4.FALSE 0 "only zero is considered as falsy value")
 
-;; e4 environment variables
+;; E4 environment variables
 (setq e4.stack '() ; main data stack for execution
       e4.tokens '() ; usually this is an input data for interpreter
       e4.new-word '() ; car is word-symbol, cdr is its body
-      e4.dictionary (make-hash-table :test 'equal) ; all defined words
-      e4.eval-mode :interpret
-      e4.nest-level 0)
+      e4.dict (make-hash-table :test 'equal) ; all defined words
+      e4.eval-mode :interpret ;; can be `:interpret' or `:compile'
+      e4.nest-level 0) ;; counter for nested definitions to find corresponding }
 
-;;;; functions ;;;;
+;;;; [ CORE ] ;;;;
 
-;;; stack operations
+;;; [ MISCELLANEOUS ]
+;;; something not so tightly related to the E4 or its components
+
+(defmacro e4.do-nothing ()
+  "literally, do nothing at all. used for readability"
+  '(lambda ()))
+
+;;; [ STACK ]
+;;; operations defined on `stack' (also known as data or parameter stack)
 
 (defun e4.stack-drop ()
   "drop top element from the stack"
@@ -55,16 +63,24 @@
 	  (_ scalar))
 	e4.stack))
 
-;;; word/dictionary manipulations
+;;; [ DICTIONARY ]
+;;; operations defined on `dictionary'
 
-(defun e4.word-register (word fn)
-  "extend or update word dictionary" 
-  (puthash word fn e4.dictionary))
+(defun e4.dict-store (word fn)
+  "insert or replace dictionary entry" 
+  (puthash word fn e4.dict))
+
+(defun e4.dict-fetch (word)
+  "return dictionary entry, if it is stored (nil otherwise)"
+  (gethash word e4.dict))
+
+;;; [ WORDS ]
+;;; operations defined on `words'
 
 (defun e4.word-exec (word)
   "invoke word associated lambda"
-  (let ((fn (gethash word e4.dictionary)))
-    (if fn
+  (let ((fn (e4.dict-fetch word)))
+    (if fn 
 	(if (functionp fn)
 	    (e4.next-token-do (funcall fn)) ; predefined word
 	  (setq e4.tokens (append fn (cdr e4.tokens))))
@@ -93,22 +109,15 @@
        (let ((elements (list ,@pops)))
 	 (setq e4.stack (append (list ,@order) e4.stack))))))
 
-;;; utils
-
-(defmacro e4.do-nothing ()
-  "literally, do nothing at all"
-  '(lambda ()))
-
-(defmacro e4.nest-level-modify (mutator)
-  "change `nesl-level' value bu applying mutator function (usually 1+ or 1-)"
-  `(setq e4.nest-level (,mutator e4.nest-level)))
+;;; [ TOKENS ]
+;;; operations defined on `tokens'
 
 (defun e4.next-token ()
   "throw away current token and take another"
   (setq e4.tokens (cdr e4.tokens)))
 
 (defmacro e4.next-token-do (action)
-  "select next token, perform `action'"
+  "select next token, perform `action'. wrapped in `progn'"
   `(progn
      (e4.next-token)
      ,action))
@@ -126,17 +135,33 @@
       (e4.next-token)
       (when ,termination-p (throw 'break nil)))))
 
-;;; interpret-related
+;;; [ INTERPRET ]
+;;; walking through tokens while evaluating them
+
+(defun e4.finish-words-interpretation ()
+  "exit interpetation mode and begin new word interning"
+  (e4.next-token)
+  (setq e4.eval-mode :compile))
+
+(defun e4.take-scalar (scalar)
+  "while moving to next token, store given scalar in stack"
+  (e4.next-token)
+  (e4.stack-push scalar))
 
 (defun e4.interpreting-eval (word)
   "process word while in interpreter mode"
   (if (eq '{ word) ; mode switching symbol
-      (e4.next-token-do (setq e4.eval-mode :compile))
+      (e4.finish-words-interpretation)
     (if (symbolp word)
-	(e4.word-exec word)
-      (e4.next-token-do (e4.stack-push word)))))
+	(e4.word-exec word) 
+      (e4.take-scalar word)))) ; everything except symbols considered scalars
 
-;;; compile-related
+;;; [ COMPILE ]
+;;; walking through tokens while collecting them without evaluation
+
+(defmacro e4.nest-level-modify (mutator)
+  "change `nest-level' value by applying mutator function (usually 1+ or 1-)"
+  `(setq e4.nest-level (,mutator e4.nest-level)))
 
 (defun e4.new-word-set (word)
   "put user-defined word in dictionary"
@@ -151,21 +176,22 @@
 (defun e4.finish-word-compilation ()
   "finalize word compilation and enter interpretation mode"
   (let ((new-word (nreverse e4.new-word)))
-    (puthash (car new-word) (cdr new-word) e4.dictionary))
+    (e4.dict-store (car new-word) (cdr new-word)))
   (setq e4.eval-mode :interpret
 	e4.new-word '()))
 
 (defun e4.compiling-eval (word)
   "process word while in compiler mode"
-  (if (eq '} word) 
+  (if (eq '} word) ; mode switching symbol
       (e4.compilation-closing-tag)
-    (cond (e4.new-word
+    (cond (e4.new-word ; if new name is already registered
 	   (when (eq '{ word) (e4.nest-level-modify 1+)) ; nested word definition ?
 	   (push word e4.new-word))
-	  (t (e4.new-word-set word))))
+	  (t (e4.new-word-set word)))) ; otherwise, store it
   (e4.next-token))
 
-;;; evaluation
+;;; [ EVALUATION ]
+;;; the highest level, entry point
 
 (defun e4.reload-environment (tokens)
   "prepare E4 environment to run expressions"
@@ -178,14 +204,14 @@
   (e4.while-token
    (if (listp token)
        (e4.next-token) ; if it is a list, then it is a comment
-     (funcall (if (eq :interpret e4.eval-mode)
-		  'e4.interpreting-eval
-		'e4.compiling-eval)
-	      token))))
+     (if (eq :interpret e4.eval-mode) ; else process token in current mode
+	 (e4.interpreting-eval token)
+       (e4.compiling-eval token)))))
 
-;;;; predefined e4 words ;;;;
+;;;; [ BUILTINS ] ;;;;
 
-;;; fundamentals
+;;; [ PREDEFINED: FUNDAMENTAL ]
+;;; arithmetics, basic and generic operators
 
 ;; (word binded-lisp-fn arity)
 (dolist (binding '((- 2)
@@ -199,127 +225,127 @@
   (let* ((word (car binding))
 	(fn (if (= 2 (length binding)) word (cadr binding)))
 	(arity (car (last binding))))
-    (e4.word-register
+    (e4.dict-store
      word `(lambda ()
 	     (e4.stack-push (e4.call-with-arity ',fn ,arity))))))
 
 ;; only 0 number is considered false (can be changed later)
-(e4.word-register
+(e4.dict-store
  '! (lambda ()
       (let ((top (e4.stack-pop)))
 	(e4.stack-push (if (and (numberp top) (zerop top))
 			   e4.TRUE
 			 e4.FALSE)))))
 
-(e4.word-register
+(e4.dict-store
  '+ (e4.overloaded-op-lambda (cond ((numberp top) '+)
 				   ((stringp top) 'concat)) 2))
 
-(e4.word-register
+(e4.dict-store
  '= (e4.overloaded-op-lambda (cond ((numberp top) '=)
 				   ((stringp top) 'string=)) 2))
 
-;;; data stack manipulators
+;;; [ PREDEFINED: STACK ]
+;;; common ways to manipulate parameter stack
 
-(e4.word-register
+(e4.dict-store
  'DROP (lambda () (e4.stack-pop)))
 
-;; it should be faster than `e4.stack-reorder-lambda',
-;; but benchmarks are needed.
-(e4.word-register
+(e4.dict-store
  'NIP (lambda ()
 	(let ((top (e4.stack-pop)))
 	  (e4.stack-pop) ; drop the second element
 	  (setq e4.stack (cons top e4.stack)))))
 
-(e4.word-register
+(e4.dict-store
  'DUP (lambda () (e4.stack-push (car e4.stack))))
 
-(e4.word-register
+(e4.dict-store
  'SWAP (lambda ()
 	 (setq e4.stack (append (nreverse (list (e4.stack-pop)
 		       			(e4.stack-pop)))
 				e4.stack))))
 
-(e4.word-register
+(e4.dict-store
  'TUCK (e4.stack-reorder-lambda 2 (0 1 0)))
 
-(e4.word-register
+(e4.dict-store
  'OVER (e4.stack-reorder-lambda 2 (1 0 1)))
 
-(e4.word-register
+(e4.dict-store
  'ROT (e4.stack-reorder-lambda 3 (2 0 1)))
 
-(e4.word-register
+(e4.dict-store
  'DEPTH (lambda () (e4.stack-push (length e4.stack))))
 
-;;; printing words
+;;; [ PREDEFINED: DISPLAY ]
+;;; words useful for debugging and interactive development
 
-(e4.word-register
+(e4.dict-store
  '.. (lambda () (message "%s" (e4.stack-pop))))
 
-(e4.word-register
+(e4.dict-store
  '.s (lambda () (message "<%d> %s" (length e4.stack) e4.stack)))
 
-(e4.word-register
+(e4.dict-store
  'SEE (lambda ()
 	(let* ((word (intern-soft (e4.stack-pop)))
-	       (body (gethash word e4.dictionary)))
+	       (body (e4.dict-fetch word)))
 	  (if body
 	      (message "%s: %s" word body)
 	    (message "word `%s' is not defined" word)))))
 
-;;; flow controlling words
+;;; [ PREDEFINED: CONTROL FLOW ]
+;;; conditionals, loops (if any will ever appear, they should be here)
 
-(e4.word-register
+(e4.dict-store
  'IF (lambda ()
        (when (= e4.FALSE (e4.stack-pop))
 	 (e4.skip-tokens-until (or (eq 'ENDIF token)
 				   (eq 'ELSE token))))))
 
-(e4.word-register
+(e4.dict-store
  'ELSE (lambda ()
 	 (e4.skip-tokens-until (or (eq 'ENDIF token)
 				   (eq 'ELSE token)))))
 
-(e4.word-register
+(e4.dict-store
  'ENDIF (e4.do-nothing))
 
+;;; [ PREDEFINED: SEQUENCE ]
 ;;; sequence operations (vectors & strings)
 
-(e4.word-register
+(e4.dict-store
  'NTH (lambda ()
 	(let ((index (e4.stack-pop)))
 	  (e4.stack-push (elt (car e4.stack) index)))))
 
-(e4.word-register
+(e4.dict-store
  'LEN (lambda ()
 	(e4.stack-push (length (car e4.stack)))))
 
-(e4.word-register
+(e4.dict-store
  'SET (lambda ()
 	(let ((value (e4.stack-pop)) (index (e4.stack-pop)))
 	  (aset (car e4.stack) index value))))
 
-(e4.word-register
+(e4.dict-store
  'SPLIT (lambda ()
 	  (setq e4.stack (append (e4.stack-pop) e4.stack))))
 
-(e4.word-register
+(e4.dict-store
  'VEC (e4.n-aggregation-lambda (cond ((stringp n) (vconcat n))
 				      ((> n 0) (vconcat (e4.stack-npop n)))
 				      ((< n 0) (make-vector (abs n) 0)))))
 
-(e4.word-register
+(e4.dict-store
  'STR (e4.n-aggregation-lambda (cond ((vectorp n) (concat n))
 				      ((> n 0) (concat (e4.stack-npop n)))
 				      ((< n 0) (make-string (abs n) 0)))))
 
-;;;; advanced api ;;;;
+;;;; [ FRIEND IMPORTS ] ;;;;
 
-;; it is included into E4 package only temporary.
-;; those functions are completely optional, so
-;; wise choice lies in separation. 
+;; E4 without it is not very user-friendly
 (load-file
  (expand-file-name "xe4.el" (file-name-directory (or load-file-name
 						     buffer-file-name))))

@@ -48,3 +48,13 @@
 * write wrapper for getting top and pushing at stack,
   because _most_ of lambdas take one top element (or several),
   then push their into stack
+
+* check if it is possible when we collect tokens for compiled word
+  to put them reversed order (to avoid nreverse call at the end).
+  if it is, check the results (measure runtime)
+
+* check if NIP is really faster in current implementation.
+
+* DUP makes only pointer copy of sequence,
+  so deep-copy builtin primitive is needed
+  (or DUP should copy whole sequence by itself)

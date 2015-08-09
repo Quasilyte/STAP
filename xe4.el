@@ -3,8 +3,12 @@
 
 ;; this is addition to `e4' package so it requires
 ;; loaded Emacs Forth before inclusion
+;;
+;; it can be considered as public API for the language,
+;; one of possible implementations to use lower level
+;; implementation (found in `e4.el')
 
-;;;; options ;;;;
+;;;; [ OPTIONS ] ;;;;
 
 (defun xe4:set-option (option)
   (puthash (car option) (cdr option) xe4:options))
@@ -19,13 +23,13 @@
 (xe4:set-options '(return-stack-after-eval . nil)
 		 '(flush-stack-before-eval . nil))
 
-;;;; control functions ;;;;
+;;;; [ ENVIRONMENT CONTROL ] ;;;;
 
 (defun xe4:stack-flush ()
   "make E4 stack empty"
   (setq e4.stack '()))
 
-;;;; execution functions ;;;;
+;;;; [ EXECUTION ] ;;;;
 
 (defmacro xe4:with-stack-rollback (&rest forms)
   "save stack state, evaluate forms, then restore stack state"
@@ -43,7 +47,7 @@
 	  (when (gethash 'return-stack-after-eval xe4:options)
 	    '(e4.stack))))
 	  
-;;;; e4 extension ;;;;
+;;;; [ LANGUAGE EXTENSIONS ] ;;;;
 
 ;; there is small probability that some of those will
 ;; make their way into the predefined (builtin) E4 words,
@@ -51,16 +55,24 @@
 (defun xe4:import-extra-wordset ()
   "imports many useful words into your E4 dictionary (beware of name clashes)"
   (e4: '(( comparing with nil )
-	 { 0= 0 = }
-	 { 0< 0 < }
-	 { 0> 0 > }
+	   { 0= 0 = }
+	   { 0< 0 < }
+	   { 0> 0 > }
 	 ( stack top manipulations )
-	 { 2+ 2 + }
-	 { 2- 2 - }
-	 ( some other helpers )
-	 { MAKE-VEC NEG VEC }
-	 { MAKE-STR NEG STR })))
+	   { 2+ 2 + }
+	   { 2- 2 - }
+	 ( sequence constructors )
+	   { MAKE-VEC NEG VEC }
+	   { MAKE-STR NEG STR }
+	   { PAIR 2 VEC }
+	 ( sequence helpers )
+	   { 1ST 0 NTH }
+	   { 2ND 1 NTH }
+	   { 3RD 2 NTH }))
 
+
+
+  
 	     
 	 
 	  
