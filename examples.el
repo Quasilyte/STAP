@@ -66,7 +66,21 @@
  { _ DUP 2 * }
  4 iterate .s ( => 4 8 16 ))
 
+;; example #5
+;; iterating over vector
+(xe4:
+ { v [ 10 20 30 ] }
+ 
+ { spine-length SWAP LEN ROT }
+ { each spine-length DUP ROT < IF _ 1+ each ENDIF }
+ 
+ { _ DUP .. }
+ v 0 each)
+
 ;;; the most recent added fuctions below
+
+(xe4: 0 1 2 ROT) ; => (0 2 1)
+(xe4: 0 1 2 ROT ROT ROT) ; => (2 1 0)
 
 (xe4: [6 5] 1 NTH SWAP DROP) ; => (5)
 (xe4: "speed" 0 NTH) ; => (115 "speed")
@@ -83,4 +97,5 @@
 (xe4: [0 0] "foo" 0 SET "bar" 1 SET) ; => (["foo" "bar"])
 (xe4: "Aa" ?a 0 SET ?A 1 SET) ; => ("aA")
 
+(xe4: [[8]] 0 NTH 0 NTH) ; => (8 [8] [[8]])
 

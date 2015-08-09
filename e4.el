@@ -201,6 +201,17 @@
 		       			(e4.stack-pop)))
 				e4.stack))))
 
+;; looks ineffective...
+(e4.word-register
+ 'ROT (lambda ()
+	(let ((elements (list (e4.stack-pop)
+			      (e4.stack-pop)
+			      (e4.stack-pop))))
+	  (setq e4.stack (append (list (nth 2 elements)
+				       (nth 0 elements)
+				       (nth 1 elements))
+				 e4.stack)))))
+
 (e4.word-register
  'DEPTH (lambda () (e4.stack-push (length e4.stack))))
 
