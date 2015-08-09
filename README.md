@@ -9,13 +9,12 @@ generic operations on them, language is super slim and easy to learn.<br>
 This is embedded **Emacs Lisp** implementation for **Stap**, but<br>
 the latter is not bounded to it as we can freely make implementation<br>
 for any platform (thanks to **Forth** roots, **Stap** is nearly syntaxless).<br>
-<br>
+
 <blockquote>
 Because examples in README.md tend to become outdated too fast,<br>
 look for some code inside `examples.el` or `tests.el`.<br>
 </blockquote>
-<br>
-<br>
+
 <h4>Warning!</h4>
 **This is in active development, so anything can happen.**<br>
 **Code you write today in Stap can fail with an error with tomorrow version!**
