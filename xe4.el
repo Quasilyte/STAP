@@ -43,4 +43,26 @@
 	  (when (gethash 'return-stack-after-eval xe4:options)
 	    '(e4.stack))))
 	  
+;;;; e4 extension ;;;;
 
+;; there is small probability that some of those will
+;; make their way into the predefined (builtin) E4 words,
+;; mostly because of perfomance.
+(defun xe4:import-extra-wordset ()
+  "imports many useful words into your E4 dictionary (beware of name clashes)"
+  (e4: '(( comparing with nil )
+	 { 0= 0 = }
+	 { 0< 0 < }
+	 { 0> 0 > }
+	 ( stack top manipulations )
+	 { 2+ 2 + }
+	 { 2- 2 - }
+	 ( some other helpers )
+	 { MAKE-VEC NEG VEC }
+	 { MAKE-STR NEG STR })))
+
+	     
+	 
+	  
+	   
+	 

@@ -15,6 +15,11 @@
   it is related to some kind of "value copy"
   or assignment by value (now only by name)
 
+* should compiler remove comments or not?
+  it can really help to save space, but will
+  leave words without documentation inside
+  E4 code (so SEE word can not fetch whole definition)
+
 ============
 === MUST ===
 
@@ -38,3 +43,8 @@
 
 * convert examples into tests
 
+* write e4.ffi-lambda-binding
+
+* write wrapper for getting top and pushing at stack,
+  because _most_ of lambdas take one top element (or several),
+  then push their into stack

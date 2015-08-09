@@ -29,9 +29,23 @@
 
 ;;; stack operations
 
+(defun e4.stack-drop ()
+  "drop top element from the stack"
+  (setq e4.stack (cdr e4.stack)))
+
+(defun e4.stack-ndrop (n)
+  "drop n top elements from the stack"
+  (setq e4.stack (nthcdr n e4.stack)))
+
 (defun e4.stack-pop ()
   "take top element from the stack"
   (pop e4.stack))
+
+(defun e4.stack-npop (n)
+  "take n top elements from the stack and return them as a list"
+  (prog1
+      (subseq e4.stack 0 n)
+    (e4.stack-ndrop n)))
 
 (defun e4.stack-push (scalar)
   "push scalar on top of the stack"
@@ -56,12 +70,9 @@
 	  (setq e4.tokens (append fn (cdr e4.tokens))))
       (error (format "undefined e4 word: `%s'" word)))))
 
-;; maybe this function can be optimised
 (defun e4.call-with-arity (fn arity)
   "call lisp function with args passed from the e4 stack"
-  (let ((args (nreverse (subseq e4.stack 0 arity))))
-    (setq e4.stack (subseq e4.stack arity))
-    (apply fn args)))
+  (apply fn (nreverse (e4.stack-npop arity))))
 
 (defmacro e4.overloaded-op-lambda (type-switch arity)
   "create lambda calling lisp function returned from `type-switch'"
@@ -69,13 +80,10 @@
      (let ((top (car e4.stack)))
        (e4.stack-push (e4.call-with-arity ,type-switch 2)))))
 
-(defmacro e4.collecting-lambda (factory)
+(defmacro e4.n-aggregation-lambda (n-cond)
   `(lambda ()
-     (let* ((n (e4.stack-pop)) (array (,factory n 0)))
-	  (while (> n 0)
-	    (setq n (1- n))
-	    (aset array n (e4.stack-pop)))
-	  (e4.stack-push array))))
+     (let ((n (e4.stack-pop)))
+       (e4.stack-push ,n-cond))))
 
 (defmacro e4.stack-reorder-lambda (n order)
   (let ((pops (make-list n '(e4.stack-pop)))
@@ -179,13 +187,29 @@
 
 ;;; fundamentals
 
-;; basic binary and unary operators for numbers
-(dolist (pair '((- 2) (/ 2) (* 2) (< 2) (> 2)
-		(1+ 1) (1- 1)))
-  (let ((word (car pair)) (arity (nth 1 pair)))
+;; (word binded-lisp-fn arity)
+(dolist (binding '((- 2)
+		   (/ 2)
+		   (* 2)
+		   (< 2)
+		   (> 2)
+		   (1+ 1)
+		   (1- 1)
+		   (NEG - 1)))
+  (let* ((word (car binding))
+	(fn (if (= 2 (length binding)) word (cadr binding)))
+	(arity (car (last binding))))
     (e4.word-register
      word `(lambda ()
-	     (e4.stack-push (e4.call-with-arity ',word ',arity))))))
+	     (e4.stack-push (e4.call-with-arity ',fn ,arity))))))
+
+;; only 0 number is considered false (can be changed later)
+(e4.word-register
+ '! (lambda ()
+      (let ((top (e4.stack-pop)))
+	(e4.stack-push (if (and (numberp top) (zerop top))
+			   e4.TRUE
+			 e4.FALSE)))))
 
 (e4.word-register
  '+ (e4.overloaded-op-lambda (cond ((numberp top) '+)
@@ -221,7 +245,7 @@
  'TUCK (e4.stack-reorder-lambda 2 (0 1 0)))
 
 (e4.word-register
- 'OVER (e4.stack-reorder-lambda 2 (1 0 1)))Q
+ 'OVER (e4.stack-reorder-lambda 2 (1 0 1)))
 
 (e4.word-register
  'ROT (e4.stack-reorder-lambda 3 (2 0 1)))
@@ -282,10 +306,14 @@
 	  (setq e4.stack (append (e4.stack-pop) e4.stack))))
 
 (e4.word-register
- 'VEC (e4.collecting-lambda make-vector))
+ 'VEC (e4.n-aggregation-lambda (cond ((stringp n) (vconcat n))
+				      ((> n 0) (vconcat (e4.stack-npop n)))
+				      ((< n 0) (make-vector (abs n) 0)))))
 
 (e4.word-register
- 'STR (e4.collecting-lambda make-string))
+ 'STR (e4.n-aggregation-lambda (cond ((vectorp n) (concat n))
+				      ((> n 0) (concat (e4.stack-npop n)))
+				      ((< n 0) (make-string (abs n) 0)))))
 
 ;;;; advanced api ;;;;
 

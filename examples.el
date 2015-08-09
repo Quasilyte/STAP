@@ -102,7 +102,7 @@
 (xe4: 0 1 2 ROT ROT ROT) ; => (2 1 0)
 
 (xe4: [6 5] 1 NTH SWAP DROP) ; => (5)
-(xe4: "speed" 0 NTH) ; => (115 "speed")
+(xe4: "speed" 0 NTH 1 STR) ; => ("s" "speed")
 
 (xe4: [0 1 2] LEN) ; => (3 [0 1 2])
 (xe4: "measure me!" LEN) ; => (11 "measure me")
@@ -110,11 +110,36 @@
 (xe4: [0 1 2] SPLIT DROP) ; => (1 2)
 (xe4: "qwe" SPLIT) ; => (113 119 101)
 
-(xe4: 0 1 2 3 VEC) ; => ([0 1 2])
-(xe4: 113 119 101 3 STR) ; => ("qwe")
+;; VEC and STR are highly versatile:
+
+;; create sequence from stack elements
+(xe4: 0 1 2 3 VEC) ; => ([2 1 0])
+(xe4: ?0 ?1 ?2 3 STR) ; => ("210")
+
+;; create sequence from sequence of another type:
+(xe4: "012" VEC) ; => ([48 49 50])
+(xe4: [48 49 50] STR) ; => ("012")
+
+;; create empty sequences with n-capacity:
+(xe4: -4 VEC) ; => ([0 0 0 0])
+(xe4: -4 STR) ; => ("^@^@^@^@")
+
+;; other operations on sequences:
 
 (xe4: [0 0] 0 "foo" SET 1 "bar" SET) ; => (["foo" "bar"])
 (xe4: "Aa" 0 ?a SET 1 ?A SET) ; => ("aA")
 
 (xe4: [[8]] 0 NTH 0 NTH) ; => (8 [8] [[8]])
 
+;;; extension from xe4 wordset:
+
+(xe4:import-extra-wordset)
+
+(xe4: 0 0= 2 0=) ; => (0 -1)
+(xe4: 2 0> -1 0>) ; => (0 -1)
+(xe4: -1 0< 2 0<) ; => (0 -1)
+
+(xe4: 7 2+ 9 2-) ; => (7 9)
+
+(xe4: 5 MAKE-VEC) ; => ([0 0 0 0 0])
+(xe4: 2 MAKE-STR) ; => ("^@^@")
