@@ -84,6 +84,9 @@
 
 ;;; the most recent added fuctions below
 
+(xe4: 4 3 2 1 TUCK) ; => (1 2 1 3 4)
+(xe4: 0 1 TUCK TUCK) ; => (1 0 1 1)
+
 (xe4: 0 1 2 ROT) ; => (0 2 1)
 (xe4: 0 1 2 ROT ROT ROT) ; => (2 1 0)
 

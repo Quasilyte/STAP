@@ -77,6 +77,14 @@
 	    (aset array n (e4.stack-pop)))
 	  (e4.stack-push array))))
 
+(defmacro e4.stack-reorder-lambda (n order)
+  (let ((pops (make-list n '(e4.stack-pop)))
+	(order (mapcar (lambda (i)
+			 (list 'nth i 'elements)) order)))
+    `(lambda ()
+       (let ((elements (list ,@pops)))
+	 (setq e4.stack (append (list ,@order) e4.stack))))))
+
 ;;; utils
 
 (defmacro e4.do-nothing ()
@@ -201,16 +209,11 @@
 		       			(e4.stack-pop)))
 				e4.stack))))
 
-;; looks ineffective...
 (e4.word-register
- 'ROT (lambda ()
-	(let ((elements (list (e4.stack-pop)
-			      (e4.stack-pop)
-			      (e4.stack-pop))))
-	  (setq e4.stack (append (list (nth 2 elements)
-				       (nth 0 elements)
-				       (nth 1 elements))
-				 e4.stack)))))
+ 'TUCK (e4.stack-reorder-lambda 2 (0 1 0)))
+
+(e4.word-register
+ 'ROT (e4.stack-reorder-lambda 3 (2 0 1)))
 
 (e4.word-register
  'DEPTH (lambda () (e4.stack-push (length e4.stack))))
