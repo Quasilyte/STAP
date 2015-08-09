@@ -20,6 +20,12 @@
   leave words without documentation inside
   E4 code (so SEE word can not fetch whole definition)
 
+* change predefined words from upper case to lewer case?
+  lower case is almost always preferable as it requires
+  fewer key strokes from programmer, but also introduces
+  name clash problems (having both VEC and vec is also bad
+  anyway, so this could be nice to change spellings).
+
 ============
 === MUST ===
 
