@@ -213,6 +213,9 @@
  'TUCK (e4.stack-reorder-lambda 2 (0 1 0)))
 
 (e4.word-register
+ 'OVER (e4.stack-reorder-lambda 2 (1 0 1)))Q
+
+(e4.word-register
  'ROT (e4.stack-reorder-lambda 3 (2 0 1)))
 
 (e4.word-register
@@ -225,6 +228,14 @@
 
 (e4.word-register
  '.s (lambda () (message "<%d> %s" (length e4.stack) e4.stack)))
+
+(e4.word-register
+ 'SEE (lambda ()
+	(let* ((word (intern-soft (e4.stack-pop)))
+	       (body (gethash word e4.dictionary)))
+	  (if body
+	      (message "%s: %s" word body)
+	    (message "word `%s' is not defined" word)))))
 
 ;;; flow controlling words
 

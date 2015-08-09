@@ -30,5 +30,11 @@
 =============
 === FIXME ===
 
+* overload VEC and STR to enable convertions
+  between the two
 
+* if it is possible, rewrite collecting lambda
+  with concat and vconcat; make benchmarks
+
+* convert examples into tests
 
