@@ -35,6 +35,9 @@
   "literally, do nothing at all. used for readability"
   '(lambda ()))
 
+(defun stap-unnamed-p (word)
+  (= ?& (aref (symbol-name word) 0)))
+
 ;;; [ STACK ]
 ;;; operations defined on `stack' (also known as data or parameter stack)
 
@@ -77,10 +80,17 @@
 
 (defun stap-dict-fetch (word)
   "return dictionary entry, if it is stored (nil otherwise)"
-  (gethash word stap-dict :not-found))
+  (gethash (if (stap-unnamed-p word)
+	       '&unnamed
+	     word)
+	   stap-dict :not-found))
 
 ;;; [ WORDS ]
 ;;; operations defined on `words'
+
+(defun stap-definition-exec (fn)
+  "execute (maybe recursively) STAP definition"
+  (setq stap-tokens (append fn (cdr stap-tokens))))
 
 (defun stap-word-exec (word)
   "invoke word associated lambda"
@@ -89,7 +99,7 @@
 	(error (format "undefined e4 word: `%s'" word))
       (if (functionp fn)
 	  (stap-next-token-do (funcall fn)) ; predefined word
-	(setq stap-tokens (append fn (cdr stap-tokens)))))))
+	(stap-user-word-exec fn)))))
 
 (defun stap-call-with-arity (fn arity)
   "call lisp function with args passed from the e4 stack"
@@ -162,7 +172,10 @@
 
 (defun stap-new-word-set (word)
   "put user-defined word in dictionary"
-  (setq stap-new-word (cons word nil)))
+  (setq stap-new-word (cons (if (stap-unnamed-p word)
+				'&unnamed
+			      word)
+			    nil)))
 
 (defun stap-compilation-closing-tag ()
   "handle compilation terminating tag (it should be balanced with open tag)"

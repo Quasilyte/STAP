@@ -94,15 +94,27 @@
 	     { break 0 pop }
 
 	     { $do/stash -- push -1 > if :do/stash $do/stash endif }
-	     { times pop { :do/stash } $do/stash }
-	     { loop pop { :do/stash push _ } $do/stash }
+	     
+	     { times pop { :do/stash &loop-body } $do/stash }
+	     
+	     { loop pop
+	       { :do/stash push &loop-body } $do/stash }
+	     
 	     { index-walk len loop }
-	     { val-walk len pop { :do/stash push nth _ } $do/stash }
-	     { map! len pop { :do/stash push nth _ push swap set } $do/stash }
+	       
+	     { val-walk len pop
+	       { :do/stash push nth &loop-body } $do/stash }
+	     
+	     { map! len pop
+	       { :do/stash push nth &loop-body push swap set } $do/stash }
+	     
 	     { map copy map! }
 
-	     { $do/stack dup 0 = if drop else :do/stack $do/stack endif }
-	     { reduce len { :do/stack 1- "010" 2 shake nth _ swap } $do/stack })))
+	     { $do/stack dup
+	       0 = if drop else :do/stack $do/stack endif }
+	     
+	     { reduce len
+	       { :do/stack 1- "010" 2 shake nth &loop-body swap } $do/stack })))
 
 
 (defun xstap:import-math-dict ()

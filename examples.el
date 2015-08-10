@@ -47,13 +47,12 @@
 ;; example #3
 ;; simple iteration
 (xstap:
- ( _ (underscore) is convention for lambdas )
- { times dup 0 > if _ 1- times endif drop }
+ { times dup 0 > if &loop-body 1- times endif drop }
 
  ( this solution works, but we can mess with counter at stack )
  
- { _ "hello, world!" @one } 6 times
- { _ dup @one } 3 times)
+ { &do "hello, world!" @one } 6 times
+ { &do dup @one } 3 times)
 
 ;; example #4
 ;; loop to accumulate values
@@ -64,8 +63,8 @@
  ( sequence consists of "foo", "bar" and "baz" )
  reset
  
- { iterate next "baz" = if else _ iterate endif }
- { _ dup 2 * }
+ { iterate next "baz" = if else && iterate endif }
+ { &apply dup 2 * }
  4 iterate @all ( => 4 8 16 ))
 
 ;; example #5
@@ -77,10 +76,10 @@
 
  { rotate [2 0 1] 3 shake }
  { spine-length swap len rotate }             ( drop counter )
- { each spine-length dup rotate < if _ 1+ each else drop endif }
+ { each spine-length dup rotate < if && 1+ each else drop endif }
 
  ( modify current index, set value of 97 + index )
- { _ dup rotate swap dup 97 + set swap @all }
+ { && dup rotate swap dup 97 + set swap @all }
 
  v 0 each
  s 1 each) ; => ("fbcde" [97 98 99])
@@ -172,30 +171,30 @@
 
 ;; no iteration counter, simple repetitons (fastest loop)
 (xstap:
- { _ "yay!" } 3 times) ; => ("yay!" "yay!" "yay!")
+ { && "yay!" } 3 times) ; => ("yay!" "yay!" "yay!")
 
 ;; `loop' puts iteration number at stack on each iteration
 (xstap:
- { _ dup } 2 loop) ; => (0 0 1 1)
+ { && dup } 2 loop) ; => (0 0 1 1)
 
 ;; `index-walk' goes through the sequence giving you the iteration number.
 ;; equal to "len loop" call
 (xstap:
- [7 7 7] { _ nth swap } index-walk) ; => ([7 7 7] 7 7 7)
+ [7 7 7] { && nth swap } index-walk) ; => ([7 7 7] 7 7 7)
 
 ;; `val-walk' is like `index-walk', but shares the sequence values with you
 (xstap:
- [7 7 7] { _ swap } val-walk) ; => ([7 7 7] 7 7 7)
+ [7 7 7] { && swap } val-walk) ; => ([7 7 7] 7 7 7)
 
 ;; `map!' iterates over sequence and changes its values;
 ;; you get current value at each iteration and should return the replacement
 (xstap:
- "foo" { _ 1+ } map!) ; => ("gpp")
+ "foo" { && 1+ } map!) ; => ("gpp")
 
 ;; map is useful when you want to map, but do not want to modify
 ;; input sequence (it modifies the copy)
 (xstap:
- "nom" { _ 1- } map) ; => ("mnl" "nom")
+ "nom" { && 1- } map) ; => ("mnl" "nom")
 
 ;; reduce is a special loop. it does not use stash, but stores
 ;; iteration information on stack (so be careful).
@@ -204,9 +203,9 @@
  { find dup push :pred if pop else drop endif }
 
  ( find min )
- { :pred < } [0 8 2 10 7] 1st pop { _ find } reduce push
+ { :pred < } [0 8 2 10 7] 1st pop { && find } reduce push
  swap drop ( delete forst vec )
 
  ( find max )
- { :pred > } [0 8 2 10 7] 1st pop { _ find } reduce push
+ { :pred > } [0 8 2 10 7] 1st pop { && find } reduce push
  swap drop ( delete second vec )) ; => (10 0)

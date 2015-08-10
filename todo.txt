@@ -17,9 +17,9 @@
   1) nested words which will be evaluated only once
   2) for the "default" actions
 
-* maybe lambdas can start with `&', and all share same
-  spot in dictionary, so &action and &compare
-  can override each other, but readibility is higher
+* what is considered as false value?
+  it is vital, because `!' operator must know whenever
+  the arguments are true or false to invert them
 
 ============
 === MUST ===
