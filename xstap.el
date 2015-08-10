@@ -20,8 +20,8 @@
 (setq xstap:options (make-hash-table :test 'eq))
 
 ;; set default options
-(xstap:set-options '(return-stack-after-eval . nil)
-		   '(flush-stack-before-eval . nil))
+(xstap:set-options '(return-stack-after-eval . t)
+		   '(flush-stack-before-eval . t))
 
 ;;;; [ ENVIRONMENT CONTROL ] ;;;;
 
@@ -43,30 +43,35 @@
   (append '(progn)
 	  (when (gethash 'flush-stack-before-eval xstap:options)
 	    '((xstap:stack-flush)))
-	  `((e4: ',words))
+	  `((stap: ',words))
 	  (when (gethash 'return-stack-after-eval xstap:options)
 	    '(stap-stack))))
 
 ;;;; [ LANGUAGE EXTENSIONS ] ;;;;
 
-;; there is small probability that some of those will
-;; make their way into the predefined (builtin) STAP words,
-;; mostly because of perfomance.
-(defun xstap:import-extra-wordset ()
-  "imports many useful words into your STAP dictionary (beware of name clashes)"
-  (e4: '(( comparing with nil )
-	   { 0= 0 = }
-	   { 0< 0 < }
-	   { 0> 0 > }
-	 ( stack top manipulations )
-	   { 2+ 2 + }
-	   { 2- 2 - }
-	 ( sequence constructors )
-	   { MAKE-VEC NEG VEC }
-	   { MAKE-STR NEG STR }
-	   { PAIR 2 VEC }
-	 ( sequence helpers )
-	   { 1ST 0 NTH }
-	   { 2ND 1 NTH }
-	   { 3RD 2 NTH })))
+(defun xstap:import-essential-dict ()
+  "imports most useful definitions (like `swap' and `drop')"
+  (stap: '(( stack manipulations )
+	   { swap [1 0] 2 shake }
+	   { drop [] 1 shake }
+	   { ndrop [] swap shake }
+	   { dup [0 0] 1 shake } 
+	   { store pop push })))
 
+(defun xstap:import-extra-dict ()
+  "imports many useful words into your STAP dictionary (beware of name clashes)"
+  (stap: '(( comparing with nil )
+	     { 0= 0 = }
+	     { 0< 0 < }
+	     { 0> 0 > }
+	   ( stack top manipulations )
+	     { 2+ 2 + }
+	     { 2- 2 - }
+	   ( sequence constructors )
+	     { make-vec neg vec }
+	     { make-str neg str }
+	     { pair 2 vec }
+	   ( sequence helpers )
+	     { 1st 0 nth }
+	     { 2nd 1 nth }
+	     { 3rd 2 nth })))

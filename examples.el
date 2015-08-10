@@ -8,8 +8,8 @@
 ;; all examples should be runnable with the
 ;; latest STAP version.
 
-(xstap:set-options '(return-stack-after-eval . t)
-		   '(flush-stack-before-eval . t))
+;; we really need this one
+(xstap:import-essential-dict)
 
 ;; example #1
 ;; immutable sequence 
@@ -24,7 +24,7 @@
        
  ( prints "for", "bar", "baz" )
  
- reset next .. next .. next ..
+ reset next @one next @one next @one
  ( next calls return the last value (baz) )
  
  reset
@@ -46,15 +46,15 @@
 ;; simple iteration
 (xstap:
  ( _ (underscore) is convention for lambdas )
- { times DUP 0 > IF _ 1- times ENDIF DROP }
+ { times dup 0 > if _ 1- times endif drop }
 
  ( this solution works, but we can mess with counter at stack )
-  
- { _ "hello, world!" .. } 6 times
- { _ DUP .. } 3 times)
+ 
+ { _ "hello, world!" @one } 6 times
+ { _ dup @one } 3 times)
 
 ;; example #4
-;; loop for accumulate values
+;; loop to accumulate values
 (xstap:
  ( previous loop can not be used to collect data into stack )
  ( but we can make another one, using our super-sequence )
@@ -62,9 +62,9 @@
  ( sequence consists of "foo", "bar" and "baz" )
  reset
  
- { iterate next "baz" = IF ELSE _ iterate ENDIF }
- { _ DUP 2 * }
- 4 iterate .s ( => 4 8 16 ))
+ { iterate next "baz" = if else _ iterate endif }
+ { _ dup 2 * }
+ 4 iterate @all ( => 4 8 16 ))
 
 ;; example #5
 ;; iterating over vector
@@ -73,67 +73,78 @@
  { v [ 10 20 30 ] }
  { s "foxey" }
 
- { spine-length SWAP LEN ROT }             ( drop counter )
- { each spine-length DUP ROT < IF _ 1+ each ELSE DROP ENDIF }
+ { rotate [2 0 1] 3 shake }
+ { spine-length swap len rotate }             ( drop counter )
+ { each spine-length dup rotate < if _ 1+ each else drop endif }
 
  ( modify current index, set value of 97 + index )
- { _ DUP ROT SWAP DUP 97 + SET SWAP .s }
+ { _ dup rotate swap dup 97 + set swap @all }
 
  v 0 each
  s 1 each) ; => ("fbcde" [97 98 99])
 
-;;; the most recent added fuctions below
+;; `shake' can be used for many tasks
+
+;; reorder the stack is the main purpose
+(xstap: 1 2 3 4 [3 2 1 0] 4 shake) ; => (1 2 3 4)
+(xstap: 0 1 1 0 [1 0 3 2] 4 shake) ; => (1 0 0 1)
+
+;; it can ordering vector can be empty, then
+;; applying it will decrease stack elements count
+(xstap: 4 5 6 [] 2 shake) ; => (4)
+
+;; same index can appear in ordering vector multiple times
+(xstap: 1 2 3 [0 0 0 0] 1 shake) ; => (3 3 3 3 2 1)
+
+;; one of the most useful new feature is temporal storage.
+;; it can hold 1 element at any time, and that element
+;; is last pop'ed thing.
+;; we can take element from that storage infinite times
+(xstap: 5 pop push push push) ; => (5 5 5)
+(xstap: 777 pop 1 1 push 0 push) ; => (777 0 777 1 1)
+
+;; this can be useful if you want to store element,
+;; but without removing it from stack
+(xstap: 6 store push) ; => (6 6)
 
 (xstap:
  { func 1 2 3 }
- "func" SEE ( func: (1 2 3) )
- "concat" SEE ( word `concat' is not defined))
+ "func" @describe ( func: (1 2 3) )
+ "concat" @describe ( word `concat' is not defined))
 
-(xstap: 1 2 3 4 NIP) ; => (4 2 1)
-(xstap: 1 2 3 4 NIP NIP) ; => (4 1)
+(xstap: [6 5] 1 nth swap drop) ; => (5)
+(xstap: "speed" 0 nth 1 str) ; => ("s" "speed")
 
-(xstap: 4 3 2 1 TUCK) ; => (1 2 1 3 4)
-(xstap: 0 1 TUCK TUCK) ; => (1 0 1 1)
+(xstap: [0 1 2] len) ; => (3 [0 1 2])
+(xstap: "measure me!" len) ; => (11 "measure me")
 
-(xstap: 1 2 3 4 OVER) ; => (3 4 3 2 1)
-(xstap: 2 1 OVER OVER) ; => (1 2 1 2)
+(xstap: [0 1 2] split drop) ; => (1 2)
+(xstap: "qwe" split) ; => (113 119 101)
 
-(xstap: 0 1 2 ROT) ; => (0 2 1)
-(xstap: 0 1 2 ROT ROT ROT) ; => (2 1 0)
-
-(xstap: [6 5] 1 NTH SWAP DROP) ; => (5)
-(xstap: "speed" 0 NTH 1 STR) ; => ("s" "speed")
-
-(xstap: [0 1 2] LEN) ; => (3 [0 1 2])
-(xstap: "measure me!" LEN) ; => (11 "measure me")
-
-(xstap: [0 1 2] SPLIT DROP) ; => (1 2)
-(xstap: "qwe" SPLIT) ; => (113 119 101)
-
-;; VEC and STR are highly versatile:
+;; `vec' and `str' are highly versatile:
 
 ;; create sequence from stack elements
-(xstap: 0 1 2 3 VEC) ; => ([2 1 0])
-(xstap: ?0 ?1 ?2 3 STR) ; => ("210")
+(xstap: 0 1 2 3 vec) ; => ([2 1 0])
+(xstap: ?0 ?1 ?2 3 str) ; => ("210")
 
 ;; create sequence from sequence of another type:
-(xstap: "012" VEC) ; => ([48 49 50])
-(xstap: [48 49 50] STR) ; => ("012")
+(xstap: "012" vec) ; => ([48 49 50])
+(xstap: [48 49 50] str) ; => ("012")
 
 ;; create empty sequences with n-capacity:
-(xstap: -4 VEC) ; => ([0 0 0 0])
-(xstap: -4 STR) ; => ("^@^@^@^@")
+(xstap: -4 vec) ; => ([0 0 0 0])
+(xstap: -4 str) ; => ("^@^@^@^@")
 
 ;; other operations on sequences:
 
-(xstap: [0 0] 0 "foo" SET 1 "bar" SET) ; => (["foo" "bar"])
-(xstap: "Aa" 0 ?a SET 1 ?A SET) ; => ("aA")
+(xstap: [0 0] 0 "foo" set 1 "bar" set) ; => (["foo" "bar"])
+(xstap: "Aa" 0 ?a set 1 ?A set) ; => ("aA")
 
-(xstap: [[8]] 0 NTH 0 NTH) ; => (8 [8] [[8]])
+(xstap: [[8]] 0 nth 0 nth) ; => (8 [8] [[8]])
 
 ;;; extension from xe4 wordset:
 
-(xstap:import-extra-wordset)
+(xstap:import-extra-dict)
 
 (xstap: 0 0= 2 0=) ; => (0 -1)
 (xstap: 2 0> -1 0>) ; => (0 -1)
@@ -141,8 +152,8 @@
 
 (xstap: 7 2+ 9 2-) ; => (7 9)
 
-(xstap: 5 MAKE-VEC) ; => ([0 0 0 0 0])
-(xstap: 2 MAKE-STR) ; => ("^@^@")
+(xstap: 5 make-vec) ; => ([0 0 0 0 0])
+(xstap: 2 make-str) ; => ("^@^@")
 
-(xstap: 0 1 PAIR) ; => ([1 0])
-(xstap: 0 1 PAIR 1ST SWAP 2ND) ; => (0 [1 0] 1)
+(xstap: 0 1 pair) ; => ([1 0])
+(xstap: 0 1 pair 1st swap 2nd) ; => (0 [1 0] 1)

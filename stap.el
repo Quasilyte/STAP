@@ -19,6 +19,7 @@
 
 ;; STAP environment variables
 (setq stap-stack '() ; main data stack for execution
+      stap-stash '() ; pop'ed elements goes in here
       stap-tokens '() ; usually this is an input data for interpreter
       stap-new-word '() ; car is word-symbol, cdr is its body
       stap-dict (make-hash-table :test 'equal) ; all defined words
@@ -63,6 +64,10 @@
 	  (_ scalar))
 	stap-stack))
 
+(defun stap-stack-npush (scalars)
+  "push given list of scalars on the data stack"
+  (setq stap-stack (append scalars stap-stack)))
+
 ;;; [ DICTIONARY ]
 ;;; operations defined on `dictionary'
 
@@ -100,14 +105,6 @@
   `(lambda ()
      (let ((n (stap-stack-pop)))
        (stap-stack-push ,n-cond))))
-
-(defmacro stap-stack-reorder-lambda (n order)
-  (let ((pops (make-list n '(stap-stack-pop)))
-	(order (mapcar (lambda (i)
-			 (list 'nth i 'elements)) order)))
-    `(lambda ()
-       (let ((elements (list ,@pops)))
-	 (setq stap-stack (append (list ,@order) stap-stack))))))
 
 ;;; [ TOKENS ]
 ;;; operations defined on `tokens'
@@ -198,7 +195,7 @@
   (setq stap-eval-mode :interpret) ; we must always start from this mode
   (setq stap-tokens tokens))
 
-(defun e4: (words)
+(defun stap: (words)
   "take some STAP words as a list, evaluate them"
   (stap-reload-environment words)
   (stap-while-token
@@ -221,7 +218,7 @@
 		   (> 2)
 		   (1+ 1)
 		   (1- 1)
-		   (NEG - 1)))
+		   (neg - 1)))
   (let* ((word (car binding))
 	 (fn (if (= 2 (length binding)) word (cadr binding)))
 	 (arity (car (last binding))))
@@ -246,100 +243,87 @@
 				     ((stringp top) 'string=)) 2))
 
 ;;; [ PREDEFINED: STACK ]
-;;; common ways to manipulate parameter stack
+;;; common ways to work with parameter stack
 
 (stap-dict-store
- 'DROP (lambda () (stap-stack-pop)))
+ 'shake (lambda ()
+	  (let* ((n (stap-stack-pop))
+		 (order (append (stap-stack-pop) nil))
+		 (slice (stap-stack-npop n)))
+	    (stap-stack-npush (mapcar (lambda (pos)
+					(nth pos slice)) order)))))
 
 (stap-dict-store
- 'NIP (lambda ()
-	(let ((top (stap-stack-pop)))
-	  (stap-stack-pop) ; drop the second element
-	  (setq stap-stack (cons top stap-stack)))))
+ 'count (lambda () (stap-stack-push (length stap-stack))))
 
 (stap-dict-store
- 'DUP (lambda () (stap-stack-push (car stap-stack))))
+ 'pop (lambda () (setq stap-stash (stap-stack-pop))))
 
 (stap-dict-store
- 'SWAP (lambda ()
-	 (setq stap-stack (append (nreverse (list (stap-stack-pop)
-						  (stap-stack-pop)))
-				  stap-stack))))
-
-(stap-dict-store
- 'TUCK (stap-stack-reorder-lambda 2 (0 1 0)))
-
-(stap-dict-store
- 'OVER (stap-stack-reorder-lambda 2 (1 0 1)))
-
-(stap-dict-store
- 'ROT (stap-stack-reorder-lambda 3 (2 0 1)))
-
-(stap-dict-store
- 'DEPTH (lambda () (stap-stack-push (length stap-stack))))
+ 'push (lambda () (stap-stack-push stap-stash)))
 
 ;;; [ PREDEFINED: DISPLAY ]
 ;;; words useful for debugging and interactive development
 
 (stap-dict-store
- '.. (lambda () (message "%s" (stap-stack-pop))))
+ '@one (lambda () (message "%s" (stap-stack-pop))))
 
 (stap-dict-store
- '.s (lambda () (message "<%d> %s" (length stap-stack) stap-stack)))
+ '@all (lambda () (message "<%d> %s" (length stap-stack) stap-stack)))
 
 (stap-dict-store
- 'SEE (lambda ()
-	(let* ((word (intern-soft (stap-stack-pop)))
-	       (body (stap-dict-fetch word)))
-	  (if body
-	      (message "%s: %s" word body)
-	    (message "word `%s' is not defined" word)))))
+ '@describe (lambda ()
+	      (let* ((word (intern-soft (stap-stack-pop)))
+		     (body (stap-dict-fetch word)))
+		(if body
+		    (message "%s: %s" word body)
+		  (message "word `%s' is not defined" word)))))
 
 ;;; [ PREDEFINED: CONTROL FLOW ]
 ;;; conditionals, loops (if any will ever appear, they should be here)
 
 (stap-dict-store
- 'IF (lambda ()
+ 'if (lambda ()
        (when (= stap-FALSE (stap-stack-pop))
-	 (stap-skip-tokens-until (or (eq 'ENDIF token)
-				     (eq 'ELSE token))))))
+	 (stap-skip-tokens-until (or (eq 'endif token)
+				     (eq 'else token))))))
 
 (stap-dict-store
- 'ELSE (lambda ()
-	 (stap-skip-tokens-until (or (eq 'ENDIF token)
-				     (eq 'ELSE token)))))
+ 'else (lambda ()
+	 (stap-skip-tokens-until (or (eq 'endif token)
+				     (eq 'else token)))))
 
 (stap-dict-store
- 'ENDIF (stap-do-nothing))
+ 'endif (stap-do-nothing))
 
 ;;; [ PREDEFINED: SEQUENCE ]
 ;;; sequence operations (vectors & strings)
 
 (stap-dict-store
- 'NTH (lambda ()
+ 'nth (lambda ()
 	(let ((index (stap-stack-pop)))
 	  (stap-stack-push (elt (car stap-stack) index)))))
 
 (stap-dict-store
- 'LEN (lambda ()
+ 'len (lambda ()
 	(stap-stack-push (length (car stap-stack)))))
 
 (stap-dict-store
- 'SET (lambda ()
+ 'set (lambda ()
 	(let ((value (stap-stack-pop)) (index (stap-stack-pop)))
 	  (aset (car stap-stack) index value))))
 
 (stap-dict-store
- 'SPLIT (lambda ()
+ 'split (lambda ()
 	  (setq stap-stack (append (stap-stack-pop) stap-stack))))
 
 (stap-dict-store
- 'VEC (stap-n-aggregation-lambda (cond ((stringp n) (vconcat n))
+ 'vec (stap-n-aggregation-lambda (cond ((stringp n) (vconcat n))
 				       ((> n 0) (vconcat (stap-stack-npop n)))
 				       ((< n 0) (make-vector (abs n) 0)))))
 
 (stap-dict-store
- 'STR (stap-n-aggregation-lambda (cond ((vectorp n) (concat n))
+ 'str (stap-n-aggregation-lambda (cond ((vectorp n) (concat n))
 				       ((> n 0) (concat (stap-stack-npop n)))
 				       ((< n 0) (make-string (abs n) 0)))))
 

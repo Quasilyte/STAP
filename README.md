@@ -40,11 +40,11 @@ We comparing Stap mostly to the Lisp and [G]Forth.
 
 <h3>Rationale</h3>
 **Stap** grounded at Emacs because I believe it can help in some<br>
-specific cases, when lisp is kinda fail or when it makes you angry...<br>
+specific cases, when **Lisp** is kinda fails or when it makes you angry...<br>
 <br>
 The communication between **Stap** and **Emacs Lisp** is trivial,<br>
 in fact, it is possible to create **Stap** code inside macros!<br>
 <br>
-And about perfomance: we are not far slower.<br>
+And about perfomance: we are not far slower than hosting language.<br>
 Maybe a bit slower.<br>
 Your computer is so mighty anyway, do not feel sorry for CPU cycles!<br>
