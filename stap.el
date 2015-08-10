@@ -327,6 +327,10 @@
 				       ((> n 0) (concat (stap-stack-npop n)))
 				       ((< n 0) (make-string (abs n) 0)))))
 
+(stap-dict-store
+ 'copy (lambda ()
+	 (stap-stack-push (copy-seq (car stap-stack)))))
+
 ;;;; [ FRIEND IMPORTS ] ;;;;
 
 ;; STAP without it is not very user-friendly

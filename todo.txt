@@ -1,12 +1,6 @@
 =================
 === DEBATABLE ===
 
-* loops:
-  without interpreter support iteration kit is limited
-  to recursion (not that bad), but there is also
-  few ways to control the flow (sequences are good for
-  small number of iterations, not for 10+ cycles)
-
 * compile-time substitutions:
   right now there is no way to mutate a variable
   using its value
@@ -27,6 +21,10 @@
   can be useful for:
   1) nested words which will be evaluated only once
   2) for the "default" actions
+
+* maybe lambdas can start with `&', and all share same
+  spot in dictionary, so &action and &compare
+  can override each other, but readibility is higher
 
 ============
 === MUST ===

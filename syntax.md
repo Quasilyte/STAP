@@ -116,7 +116,7 @@
     <td>@describe</td>
     <td>( s1 -- )</td>
     <td>
-      lookup for word in dictionary by givec string and print
+      lookup for word in dictionary by given string and print
       the result
     </td>
   </tr>

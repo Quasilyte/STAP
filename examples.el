@@ -172,22 +172,41 @@
 
 ;; no iteration counter, simple repetitons (fastest loop)
 (xstap:
- ( `times' is the simplest looping primitive )
  { _ "yay!" } 3 times) ; => ("yay!" "yay!" "yay!")
 
+;; `loop' puts iteration number at stack on each iteration
 (xstap:
- ( `loop' gives you iteration counter value )
  { _ dup } 2 loop) ; => (0 0 1 1)
 
+;; `index-walk' goes through the sequence giving you the iteration number.
+;; equal to "len loop" call
 (xstap:
- ( `index-walk' goes through the sequence giving you the iteration number )
  [7 7 7] { _ nth swap } index-walk) ; => ([7 7 7] 7 7 7)
 
+;; `val-walk' is like `index-walk', but shares the sequence values with you
 (xstap:
- ( `val-walk' is like `index-walk', but shares the sequence values with you )
  [7 7 7] { _ swap } val-walk) ; => ([7 7 7] 7 7 7)
 
+;; `map!' iterates over sequence and changes its values;
+;; you get current value at each iteration and should return the replacement
 (xstap:
- ( `map!' iterates over sequence and changes its values )
- ( you get current value at each iteration and should return the replacement )
  "foo" { _ 1+ } map!) ; => ("gpp")
+
+;; map is useful when you want to map, but do not want to modify
+;; input sequence (it modifies the copy)
+(xstap:
+ "nom" { _ 1- } map) ; => ("mnl" "nom")
+
+;; reduce is a special loop. it does not use stash, but stores
+;; iteration information on stack (so be careful).
+;; anyway, it is extremely useful in some cases
+(xstap:
+ { find dup push :pred if pop else drop endif }
+
+ ( find min )
+ { :pred < } [0 8 2 10 7] 1st pop { _ find } reduce push
+ swap drop ( delete forst vec )
+
+ ( find max )
+ { :pred > } [0 8 2 10 7] 1st pop { _ find } reduce push
+ swap drop ( delete second vec )) ; => (10 0)
