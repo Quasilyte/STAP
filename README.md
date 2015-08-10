@@ -1,4 +1,4 @@
-<h2>Stap -- STAck Processing language</h2>
+x<h2>Stap -- STAck Processing language</h2>
 
 <h3>Short description</h3>
 Stap is a high level functional **Forth** dialect with a taste of lisp.<br>
@@ -32,7 +32,6 @@ We comparing Stap mostly to the Lisp and [G]Forth.
 
 * case-sensitive reader (most Forths are not)
 * conditionals are not compile-only words
-* [almost] stackless recursion
 * nested definitions (delayed and partial compilation) 
 * neat literals for scalars (strings, vectors) 
 * homogeneous builtin data structures

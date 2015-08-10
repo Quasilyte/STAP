@@ -50,28 +50,70 @@
 ;;;; [ LANGUAGE EXTENSIONS ] ;;;;
 
 (defun xstap:import-essential-dict ()
-  "imports most useful definitions (like `swap' and `drop')"
+  "imports essential stdlib (name clashes with your definitions are possible)"
   (stap: '(( stack manipulations )
-	   { swap "10" 2 shake }
-	   { drop "" 1 shake }
-	   { ndrop "" swap shake }
-	   { dup "00" 1 shake } 
-	   { store pop push })))
+	   
+	     { swap "10" 2 shake }
+	     { dup "00" 1 shake }
+	     
+	     { drop "" 1 shake }
+	     { ndrop "" swap shake }
+	     { drop-all count ndrop }
 
-(defun xstap:import-extra-dict ()
-  "imports many useful words into your STAP dictionary (beware of name clashes)"
+	   ( stash utils )
+	   
+	     { store pop push }
+	     { ++ push 1+ pop }
+	     { -- push 1- pop }
+
+	   ( sequence utils )
+	     
+	     { 1st 0 nth }
+	     { 2nd 1 nth }
+	     { 3rd 2 nth }
+	   
+	   ( pairs )
+
+	     { pair 2 vec } 
+	     { pair.lset 0 swap set }
+	     { pair.rset 1 swap set }
+	     { pair.l++ 1st 1+ pair.lset }
+	     { pair.l-- 1st 1- pair.lset }
+	     { pair.r++ 2nd 1+ pair.rset }
+	     { pair.r-- 2nd 1- pair.rset }	     
+	     { pair.vals 1st swap 2nd "021" 3 shake }
+	     { pair.ldiff pair.vals - }
+	     { pair.rdiff pair.vals swap - }
+
+	   ( printing words )
+	     
+	     { @store push @one }
+	   
+	   ( iteration primitives )
+
+	     { break 0 pop }
+	   
+	     { $iter :iter-before 0 > if :iter-inside $iter endif }
+	     { $fall :fall-init { :iter-inside _ -- } $iter }
+	     { $fall-without-counter { :iter-before push } $fall }
+	     { $fall-with-counter { :iter-before push 1- dup 1+ } $fall drop }
+
+	     { times { :fall-init pop } $fall-without-counter }
+	     { loop { :fall-init pop } $fall-with-counter }
+	     { walk { :fall-init len pop } $fall-with-counter })))
+
+(defun xstap:import-math-dict ()
+  "includes `sqr', `abd' and others requires `essential-dict'"
+  (stap: '(( general functions )
+	     { sqr dup * }
+	     { abs dup 0 < if neg endif })))
+ 
+(defun xstap:import-operators-dict ()
+  "imports operators like `2+', `0=', etc."
   (stap: '(( comparing with nil )
 	     { 0= 0 = }
 	     { 0< 0 < }
 	     { 0> 0 > }
-	   ( stack top manipulations )
+	   ( stack manipulations )
 	     { 2+ 2 + }
-	     { 2- 2 - }
-	   ( sequence constructors )
-	     { make-vec neg vec }
-	     { make-str neg str }
-	     { pair 2 vec }
-	   ( sequence helpers )
-	     { 1st 0 nth }
-	     { 2nd 1 nth }
-	     { 3rd 2 nth })))
+	     { 2- 2 - })))

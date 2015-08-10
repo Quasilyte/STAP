@@ -27,6 +27,15 @@
   find out all behavior behinds ' ` , tokens inside
   E4 code and document it.
 
+* recursion is simply implemented at this moment,
+  but this way is not scaling well with high amounts
+  of recursive calls (10 000+ already pretty slow).
+
+* enable empty funtion body (do-nothing function?)
+
+* name clashes are the real problem.
+  something is surely needed, but I am not sure about namespaces.
+
 =============
 === FIXME ===
 
@@ -51,3 +60,5 @@
 * DUP makes only pointer copy of sequence,
   so deep-copy builtin primitive is needed
   (or DUP should copy whole sequence by itself)
+
+* if endif is omitted, many strange things may happen!
