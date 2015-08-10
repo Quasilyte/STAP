@@ -20,20 +20,8 @@
   leave words without documentation inside
   E4 code (so SEE word can not fetch whole definition)
 
-* maybe ordering vector for shake should be replaced with
-  ordering string:
-  "0123" versus [0 1 2 3],
-  which is shorted, not a less concise and can be
-  more effective (benchmarks are needed as always).
-  it is also limits indexes used to 0-9..
-
 ============
 === MUST ===
-
-* vectors:
-  user can define a vector using [ ] syntax,
-  but there is no functions for them,
-  they are useless until some language support is done
 
 * quotations:
   find out all behavior behinds ' ` , tokens inside
@@ -59,8 +47,6 @@
 * check if it is possible when we collect tokens for compiled word
   to put them reversed order (to avoid nreverse call at the end).
   if it is, check the results (measure runtime)
-
-* check if NIP is really faster in current implementation.
 
 * DUP makes only pointer copy of sequence,
   so deep-copy builtin primitive is needed

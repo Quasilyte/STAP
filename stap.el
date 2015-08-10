@@ -248,10 +248,10 @@
 (stap-dict-store
  'shake (lambda ()
 	  (let* ((n (stap-stack-pop))
-		 (order (append (stap-stack-pop) nil))
+		 (fmt (mapcar (lambda (c) (- c ?0)) (stap-stack-pop)))
 		 (slice (stap-stack-npop n)))
 	    (stap-stack-npush (mapcar (lambda (pos)
-					(nth pos slice)) order)))))
+					(nth pos slice)) fmt)))))
 
 (stap-dict-store
  'count (lambda () (stap-stack-push (length stap-stack))))

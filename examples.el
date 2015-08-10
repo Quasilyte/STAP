@@ -86,15 +86,15 @@
 ;; `shake' can be used for many tasks
 
 ;; reorder the stack is the main purpose
-(xstap: 1 2 3 4 [3 2 1 0] 4 shake) ; => (1 2 3 4)
-(xstap: 0 1 1 0 [1 0 3 2] 4 shake) ; => (1 0 0 1)
+(xstap: 1 2 3 4 "3210" 4 shake) ; => (1 2 3 4)
+(xstap: 0 1 1 0 "1032" 4 shake) ; => (1 0 0 1)
 
-;; it can ordering vector can be empty, then
+;; format string can be empty, then
 ;; applying it will decrease stack elements count
-(xstap: 4 5 6 [] 2 shake) ; => (4)
+(xstap: 4 5 6 "" 2 shake) ; => (4)
 
 ;; same index can appear in ordering vector multiple times
-(xstap: 1 2 3 [0 0 0 0] 1 shake) ; => (3 3 3 3 2 1)
+(xstap: 1 2 3 "0000" 1 shake) ; => (3 3 3 3 2 1)
 
 ;; one of the most useful new feature is temporal storage.
 ;; it can hold 1 element at any time, and that element
@@ -128,7 +128,7 @@
 (xstap: ?0 ?1 ?2 3 str) ; => ("210")
 
 ;; create sequence from sequence of another type:
-(xstap: "012" vec) ; => ([48 49 50])
+(xstap: "abc" vec) ; => ([97 98 99])
 (xstap: [48 49 50] str) ; => ("012")
 
 ;; create empty sequences with n-capacity:

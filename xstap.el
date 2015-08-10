@@ -52,10 +52,10 @@
 (defun xstap:import-essential-dict ()
   "imports most useful definitions (like `swap' and `drop')"
   (stap: '(( stack manipulations )
-	   { swap [1 0] 2 shake }
-	   { drop [] 1 shake }
-	   { ndrop [] swap shake }
-	   { dup [0 0] 1 shake } 
+	   { swap "10" 2 shake }
+	   { drop "" 1 shake }
+	   { ndrop "" swap shake }
+	   { dup "00" 1 shake } 
 	   { store pop push })))
 
 (defun xstap:import-extra-dict ()
