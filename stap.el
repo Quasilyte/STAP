@@ -77,7 +77,7 @@
 
 (defun stap-dict-fetch (word)
   "return dictionary entry, if it is stored (nil otherwise)"
-  (gethash word stap-dict))
+  (gethash word stap-dict :not-found))
 
 ;;; [ WORDS ]
 ;;; operations defined on `words'
@@ -85,11 +85,11 @@
 (defun stap-word-exec (word)
   "invoke word associated lambda"
   (let ((fn (stap-dict-fetch word)))
-    (if fn 
-	(if (functionp fn)
-	    (stap-next-token-do (funcall fn)) ; predefined word
-	  (setq stap-tokens (append fn (cdr stap-tokens))))
-      (error (format "undefined e4 word: `%s'" word)))))
+    (if (eq :not-found fn)
+	(error (format "undefined e4 word: `%s'" word))
+      (if (functionp fn)
+	  (stap-next-token-do (funcall fn)) ; predefined word
+	(setq stap-tokens (append fn (cdr stap-tokens)))))))
 
 (defun stap-call-with-arity (fn arity)
   "call lisp function with args passed from the e4 stack"

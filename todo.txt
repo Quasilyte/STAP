@@ -9,11 +9,6 @@
   it is related to some kind of "value copy"
   or assignment by value (now only by name)
 
-* should compiler remove comments or not?
-  it can really help to save space, but will
-  leave words without documentation inside
-  E4 code (so SEE word can not fetch whole definition)
-
 * soft (shy) definitions:
   if the definition is marked in a special way,
   check if the symbol already holds an
@@ -29,15 +24,9 @@
 ============
 === MUST ===
 
-* quotations:
-  find out all behavior behinds ' ` , tokens inside
-  E4 code and document it.
-
 * recursion is simply implemented at this moment,
   but this way is not scaling well with high amounts
   of recursive calls (10 000+ already pretty slow).
-
-* enable empty funtion body (do-nothing function?)
 
 * name clashes are the real problem.
   something is surely needed, but I am not sure about namespaces.
@@ -45,15 +34,11 @@
 =============
 === FIXME ===
 
-* overload VEC and STR to enable convertions
-  between the two
-
-* if it is possible, rewrite collecting lambda
-  with concat and vconcat; make benchmarks
-
 * convert examples into tests
 
-* write e4.ffi-lambda-binding
+* write e4.ffi-lambda-binding.
+  it is needed by big loop setting mappings
+  for call-with-arity function
 
 * write wrapper for getting top and pushing at stack,
   because _most_ of lambdas take one top element (or several),
@@ -62,10 +47,6 @@
 * check if it is possible when we collect tokens for compiled word
   to put them reversed order (to avoid nreverse call at the end).
   if it is, check the results (measure runtime)
-
-* DUP makes only pointer copy of sequence,
-  so deep-copy builtin primitive is needed
-  (or DUP should copy whole sequence by itself)
 
 * if endif is omitted, many strange things may happen!
 
