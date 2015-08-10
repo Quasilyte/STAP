@@ -92,15 +92,19 @@
 	   ( iteration primitives )
 
 	     { break 0 pop }
-	   
-	     { $iter :iter-before 0 > if :iter-inside $iter endif }
-	     { $fall :fall-init { :iter-inside _ -- } $iter }
-	     { $fall-without-counter { :iter-before push } $fall }
-	     { $fall-with-counter { :iter-before push 1- dup 1+ } $fall drop }
 
-	     { times { :fall-init pop } $fall-without-counter }
-	     { loop { :fall-init pop } $fall-with-counter }
-	     { walk { :fall-init len pop } $fall-with-counter })))
+	     { $iter -- push -1 > if :iter $iter endif }  
+	     { times pop { :iter  } $iter }
+	     { loop pop { :iter push _ } $iter }
+	     { index-walk len loop }
+	     { val-walk len pop { :iter push nth _ } $iter }
+	     { map! len pop { :iter push nth _ push swap set } $iter }
+	     ( normal map comes as soon as `copy' gets implemented )
+
+	     { reduce len $reduce-iter }
+	     { $reduce-iter dup 0 = if drop
+	       else 1- "010" 2 shake nth _ swap $reduce-iter endif })))
+
 
 (defun xstap:import-math-dict ()
   "includes `sqr', `abd' and others requires `essential-dict'"

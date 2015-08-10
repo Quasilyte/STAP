@@ -20,6 +20,14 @@
   leave words without documentation inside
   E4 code (so SEE word can not fetch whole definition)
 
+* soft (shy) definitions:
+  if the definition is marked in a special way,
+  check if the symbol already holds an
+  implementation, if it has, do not redefine word.
+  can be useful for:
+  1) nested words which will be evaluated only once
+  2) for the "default" actions
+
 ============
 === MUST ===
 
@@ -62,3 +70,6 @@
   (or DUP should copy whole sequence by itself)
 
 * if endif is omitted, many strange things may happen!
+
+* implementation of multiple similar concepts lead to some code
+  duplication. 

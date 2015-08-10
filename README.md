@@ -1,4 +1,4 @@
-x<h2>Stap -- STAck Processing language</h2>
+<h2>Stap -- STAck Processing language</h2>
 
 <h3>Short description</h3>
 Stap is a high level functional **Forth** dialect with a taste of lisp.<br>

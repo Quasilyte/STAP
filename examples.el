@@ -169,47 +169,25 @@
 ;; all standard loops are iterating in reversed order.
 ;; there is a way of implementing forward iterations,
 ;; exmple will be shown after this section.
+
+;; no iteration counter, simple repetitons (fastest loop)
 (xstap:
- ( `loop' is general looping from essential dictionary )
- { _ @one } 3 loop
+ ( `times' is the simplest looping primitive )
+ { _ "yay!" } 3 times) ; => ("yay!" "yay!" "yay!")
 
- ( map over vector squaring its elements )
- [0 1 2 3] { _ dup sqr set } 4 loop ( => [0 1 4 9] )
-
- ( iterate, creating a range, then aggregate them in string )
- { n 4 } { _ ?a + } n loop n str ( => "abcd" )
- 
- ( `times' is the simplest form of iteration )
- ( it repeats given `_' lambda n-times, giving you no current index )
- { _ "i am looping!" @one } 5 times
-
- ( every loop can be cancelled using `break' function )
- { _ 3 = if break else "loop: 4 cycles" @one endif } 8 loop
- { _ "times: 1 cycle" @one break } 4 times
-
- ( the easier way to iterate over an sequence is `walk' function )
- [0 0 0] { _ 10 set } walk ( => [10 10 10] )
-
- ( `reduce' and `map' are coming soon ))
-
-;; creating forward-iterating primitive.
-;; there are multiple ways of writing it,
-;; here is the most trivial (with pair stashed instead of number)
 (xstap:
- { for
-   { break [0 0] pop } ( this hack makes our `for' breakable )
-   dup pair pop ( 1st - current index, 2nd - iteration limit )
-   { :iter-before push pair.rdiff swap 1st "02" 3 shake }
-   { :iter-inside _ push pair.l-- pop } $iter drop
-   ( if we want `break' work with default loops again, we restore it )
-   { break 0 pop } }
+ ( `loop' gives you iteration counter value )
+ { _ dup } 2 loop) ; => (0 0 1 1)
 
- ( thats all we need to do )
-   
- { _ 3 = if break else "3 times!" @one endif } 8 for
- { _ @one } 4 for)
+(xstap:
+ ( `index-walk' goes through the sequence giving you the iteration number )
+ [7 7 7] { _ nth swap } index-walk) ; => ([7 7 7] 7 7 7)
 
+(xstap:
+ ( `val-walk' is like `index-walk', but shares the sequence values with you )
+ [7 7 7] { _ swap } val-walk) ; => ([7 7 7] 7 7 7)
 
-
-
-
+(xstap:
+ ( `map!' iterates over sequence and changes its values )
+ ( you get current value at each iteration and should return the replacement )
+ "foo" { _ 1+ } map!) ; => ("gpp")
