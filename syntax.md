@@ -52,7 +52,7 @@
     <td>pop</td>
     <td>( a1 -- )</td>
     <td>
-      takes top stack element and stores it until next `pop'
+      takes top stack element and stores it until next `pop`
       override the value
     </td>
   </tr>
@@ -61,7 +61,7 @@
     <td>push</td>
     <td>( -- a1 )</td>
     <td>
-      puts stored (after last `pop') element on top
+      puts stored (after last `pop`) element on top
       of the stack
     </td>
   </tr>
@@ -79,8 +79,8 @@
     <td>shake</td>
     <td>( v1 n1 -- ? )</td>
     <td>
-      removes `n1' elements from stack, applies
-      `v1' transformation using deleted elements
+      removes `n1` elements from stack, applies
+      `v1` transformation using deleted elements
     </td>
   </tr>
 <table>
@@ -113,7 +113,7 @@
   </tr>
 
   <tr>
-    <td>@descripe</td>
+    <td>@describe</td>
     <td>( s1 -- )</td>
     <td>
       lookup for word in dictionary by givec string and print
@@ -172,7 +172,7 @@
     <td>( sv1 n1 -- sv1 a1 )</td>
     <td>
       returns n-th (n1) element of the given
-      sequence `sv1'
+      sequence `sv1`
     </td>
   </tr>
 
@@ -180,7 +180,7 @@
     <td>len</td>
     <td>( sv1 -- sv1 n1 )</td>
     <td>
-      pushes `sv1' size to stack.
+      pushes `sv1` size to stack.
       size is length for strings, count for vectors
     </td>
   </tr>
@@ -189,8 +189,8 @@
     <td>set</td>
     <td>( sv1 n1 a1 -- sv1 )</td>
     <td>
-      update `sv1' sequence value at `n1' index
-      using `a1' value
+      update `sv1` sequence value at `n1` index
+      using `a1` value
     </td>
   </tr>
   
@@ -207,7 +207,7 @@
     <td>vec(make)</td>
     <td>( ? n1 -- v1 )</td>
     <td>
-      create a new vector `v1' from `n1' values
+      create a new vector `v1` from `n1` values
       lying at stack top
     </td>
   </tr>
@@ -216,8 +216,8 @@
     <td>vec(zeros)</td>
     <td>( n1 -- v1 )</td>
     <td>
-      negative `n1' denotes how many 0 elements
-      should occupy new vector `v1'
+      negative `n1` denotes how many 0 elements
+      should occupy new vector `v1`
     </td>
   </tr>
 
@@ -225,7 +225,7 @@
     <td>vec(convert)</td>
     <td>( s1 -- v1 )</td>
     <td>
-      convert string `s1' into `v1' vector
+      convert string `s1` into `v1` vector
     </td>
   </tr>
   
@@ -233,7 +233,7 @@
     <td>str(make)</td>
     <td>( ? n1 -- v1 )</td>
     <td>
-      create a new string `s1' from `n1' characters
+      create a new string `s1` from `n1` characters
       lying at stack top
     </td>
   </tr>
@@ -242,8 +242,8 @@
     <td>str(zeros)</td>
     <td>( n1 -- s1 )</td>
     <td>
-      negative `n1' denotes how long new
-      string `s1' should be (filled with \0 characters)
+      negative `n1` denotes how long new \0 filled
+      string `s1` should be 
     </td>
   </tr>
 
@@ -251,7 +251,7 @@
     <td>str(convert)</td>
     <td>( v1 -- s1 )</td>
     <td>
-      convert vector `v1' into `s1' string
+      convert vector `v1` into `s1` string
     </td>
   </tr>
 <table>
