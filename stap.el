@@ -35,8 +35,11 @@
   "literally, do nothing at all. used for readability"
   '(lambda ()))
 
-(defun stap-unnamed-p (word)
-  (= ?& (aref (symbol-name word) 0)))
+(defun stap-symbol-convert (sym)
+  "return modified `sym' if it matches any special pattern, unchanged otherwise"
+  (if (= ?& (aref (symbol-name sym) 0))
+      '&unnamed
+    sym))
 
 ;;; [ STACK ]
 ;;; operations defined on `stack' (also known as data or parameter stack)
@@ -78,12 +81,9 @@
   "insert or replace dictionary entry" 
   (puthash word fn stap-dict))
 
-(defun stap-dict-fetch (word)
+(defun stap-dict-fetch (sym)
   "return dictionary entry, if it is stored (nil otherwise)"
-  (gethash (if (stap-unnamed-p word)
-	       '&unnamed
-	     word)
-	   stap-dict :not-found))
+  (gethash (stap-symbol-convert sym) stap-dict :not-found))
 
 ;;; [ WORDS ]
 ;;; operations defined on `words'
@@ -170,12 +170,9 @@
   "change `nest-level' value by applying mutator function (usually 1+ or 1-)"
   `(setq stap-nest-level (,mutator stap-nest-level)))
 
-(defun stap-new-word-set (word)
+(defun stap-new-word-set (sym)
   "put user-defined word in dictionary"
-  (setq stap-new-word (cons (if (stap-unnamed-p word)
-				'&unnamed
-			      word)
-			    nil)))
+  (setq stap-new-word (cons (stap-symbol-convert sym) nil)))
 
 (defun stap-compilation-closing-tag ()
   "handle compilation terminating tag (it should be balanced with open tag)"
@@ -343,6 +340,11 @@
 (stap-dict-store
  'copy (lambda ()
 	 (stap-stack-push (copy-seq (car stap-stack)))))
+
+;;; [ PREDEFINED: DICTIONARY ]
+;;; provides some control to manipulate dictionary from STAP code
+
+;; `rename' word coming soon
 
 ;;;; [ FRIEND IMPORTS ] ;;;;
 
