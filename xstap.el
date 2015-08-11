@@ -1,7 +1,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;; `XSTAP' is Extras for STAck Processing language ;;;;;
 
-;; this is addition to `e4' package so it requires
+;; this is addition to `stap' package so it requires
 ;; loaded Emacs Forth before inclusion
 ;;
 ;; it can be considered as public API for the language,
@@ -28,6 +28,16 @@
 (defun xstap:stack-flush ()
   "make STAP stack empty"
   (setq stap-stack '()))
+
+(defmacro xstap:import (names)
+  "import multiple dictionaries"
+  (let ((sexp '(progn)))
+    (dolist (name names)
+      (push (list (intern-soft (concat "xstap:import-"
+				       (symbol-name name)
+				       "-dict")))
+	    sexp))
+    (reverse sexp)))
 
 ;;;; [ EXECUTION ] ;;;;
 

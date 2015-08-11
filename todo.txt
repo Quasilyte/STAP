@@ -34,8 +34,6 @@
 =============
 === FIXME ===
 
-* convert examples into tests
-
 * write e4.ffi-lambda-binding.
   it is needed by big loop setting mappings
   for call-with-arity function

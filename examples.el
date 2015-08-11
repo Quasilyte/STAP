@@ -47,12 +47,12 @@
 ;; example #3
 ;; simple iteration
 (xstap:
- { times dup 0 > if &loop-body 1- times endif drop }
+ { n-times dup 0 > if &loop-body 1- n-times endif drop }
 
  ( this solution works, but we can mess with counter at stack )
  
- { &do "hello, world!" @one } 6 times
- { &do dup @one } 3 times)
+ { &do "hello, world!" @one } 6 n-times
+ { &do dup @one } 3 n-times)
 
 ;; example #4
 ;; loop to accumulate values

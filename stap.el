@@ -99,7 +99,7 @@
 	(error (format "undefined e4 word: `%s'" word))
       (if (functionp fn)
 	  (stap-next-token-do (funcall fn)) ; predefined word
-	(stap-user-word-exec fn)))))
+	(stap-definition-exec fn)))))
 
 (defun stap-call-with-arity (fn arity)
   "call lisp function with args passed from the e4 stack"
