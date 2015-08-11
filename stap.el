@@ -41,6 +41,10 @@
       '&unnamed
     sym))
 
+(defun stap-intern-symbol (s)
+  "convert and intern given string"
+  (stap-symbol-convert (intern s)))
+
 ;;; [ STACK ]
 ;;; operations defined on `stack' (also known as data or parameter stack)
 
@@ -77,6 +81,9 @@
 ;;; [ DICTIONARY ]
 ;;; operations defined on `dictionary'
 
+(defun stap-dict-remove (sym)
+  (remhash sym stap-dict))
+
 (defun stap-dict-store (word fn)
   "insert or replace dictionary entry" 
   (puthash word fn stap-dict))
@@ -94,7 +101,7 @@
 
 (defun stap-word-exec (word)
   "invoke word associated lambda"
-  (let ((fn (stap-dict-fetch word)))
+  (let ((fn (stap-dict-fetch (stap-symbol-convert word))))
     (if (eq :not-found fn)
 	(error (format "undefined e4 word: `%s'" word))
       (if (functionp fn)
@@ -283,11 +290,11 @@
 
 (stap-dict-store
  '@describe (lambda ()
-	      (let* ((word (intern-soft (stap-stack-pop)))
-		     (body (stap-dict-fetch word)))
+	      (let* ((sym (intern-soft (stap-stack-pop)))
+		     (body (stap-dict-fetch (stap-symbol-convert sym))))
 		(if body
-		    (message "%s: %s" word body)
-		  (message "word `%s' is not defined" word)))))
+		    (message "%s: %s" sym body)
+		  (message "word `%s' is not defined" sym)))))
 
 ;;; [ PREDEFINED: CONTROL FLOW ]
 ;;; conditionals, loops (if any will ever appear, they should be here)
@@ -344,7 +351,13 @@
 ;;; [ PREDEFINED: DICTIONARY ]
 ;;; provides some control to manipulate dictionary from STAP code
 
-;; `rename' word coming soon
+(stap-dict-store
+ 'rename (lambda ()
+	   (let* ((syms (mapcar 'stap-intern-symbol (stap-stack-npop 2)))
+		  (entry (stap-dict-fetch (cadr syms))))
+	     (when (not (eq :not-found entry))
+	       (stap-dict-store (car syms) entry)
+	       (stap-dict-remove (cadr syms))))))
 
 ;;;; [ FRIEND IMPORTS ] ;;;;
 

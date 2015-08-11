@@ -112,6 +112,17 @@
  "copy me" copy)
 
 (test
+ :expect ("give me a name!" "shiftedshifted" "@@" "##" "##") :name "rename"
+ { defun "#" "#" + "defun" "&" rename }
+ defun &unnamed
+ { shifter dup "021" 3 shake rename dup + }
+ "shifter" "@" shifter
+ "@" "shifted" @
+ { &unnamed "give me a name!" }
+ "&" "named" rename
+ named)
+
+(test
  :expect ("bark!" "bark!") :name "definition"
  { dog-says "bark!" "bark!" }
  dog-says drop drop
