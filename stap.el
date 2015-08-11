@@ -62,10 +62,12 @@
 
 (defun stap-stack-npop (n)
   "take n top elements from the stack and return them as a list"
-  (prog1
-      (subseq stap-stack 0 n)
-    (stap-stack-ndrop n)))
-
+  (let ((li '()))
+    (while (< 0 n)
+      (push (stap-stack-pop) li)
+      (setq n (1- n)))
+    (nreverse li)))
+ 
 (defun stap-stack-push (scalar)
   "push scalar on top of the stack"
   (push (pcase scalar

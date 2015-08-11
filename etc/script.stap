@@ -1,0 +1,6 @@
+"hello, world!" @one ( canonical first program )
+
+{ & } 5 loop
+
+@all
+

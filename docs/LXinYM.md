@@ -1,6 +1,7 @@
 ```elisp
-
-;; stap is a high level functional Forth dialect with a taste of lisp.
+;; STAP -- STAck Processing language 
+;;
+;; STAP is a high level [mostly] functional Forth dialect with a taste of lisp.
 ;; dynamically typed, containing only basic data structures and
 ;; generic operations on them, language is super slim and easy to learn.
 
@@ -10,10 +11,9 @@
 
 ;; github repository: https://github.com/Quasilyte/STAP
 
-;; knowledge in Forth and/or Lisp can help you greatly.
+;; knowledge in Forth and/or Lisp will be handy to dive into STAP faster
 
 ;; first, we load the `stap.el' and setup the Emacs environment:
-
 (xstap:set-options '(return-stack-after-eval . t)
 		   '(flush-stack-before-eval . t))
 
@@ -24,7 +24,7 @@
 ;; this whole invocation will return data stack as a list
 ;; into calling lisp code.
 (xstap:
-  ( now, this is not lisp anymore )
+  ( now, this is not Lisp anymore )
  
 "hello, world" @one ( works as expected )
 
@@ -34,7 +34,7 @@
 2     	      ( stack: <top [2]> )
 4.5   	      ( stack: <top [4.5 2]> )
 "str"         ( stack: <top ["str" 4.5 2]> )
-[?a "xyz" []] ( stack: <top [97 "xyz" []] "str" 4.5 2 )
+[?a "xyz" []] ( stack: <top [[97 "xyz" []] "str" 4.5 2]> )
 
   ( everything except scalars is words (functions) )
 
@@ -72,7 +72,7 @@ count ndrop ( cleans the stack completely )
 9 neg ( => -9 )
 9 1+  ( => 10 )
 1 0 = ( => 0 )
-1 1 = ( => -1 (everything, except 0, is true) )
+1 1 = ( => -1 (everything except 0 is true) )
 -1 !  ( => 0 ) drop-all
 
 0 1 = ! if "true" endif                         ( => "true" ) drop

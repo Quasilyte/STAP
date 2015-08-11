@@ -126,7 +126,6 @@
 	     { reduce len
 	       { :do/stack 1- "010" 2 shake nth &loop-body swap } $do/stack })))
 
-
 (defun xstap:import-math-dict ()
   "includes `sqr', `abd' and others requires `essential-dict'"
   (stap: '(( general functions )
