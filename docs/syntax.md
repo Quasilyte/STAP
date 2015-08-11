@@ -255,3 +255,22 @@
     </td>
   </tr>
 <table>
+
+<h4>Dictionary I/O</h4>
+
+<table>
+  <tr>
+    <th>Symbol</th>
+    <th>Signature</th>
+    <th>Description</th>
+  </tr>
+
+  <tr>
+    <td>rename</td>
+    <td>( s1 s2 -- )</td>
+    <td>
+      if entry named `s1' exists in dictionary,
+      it gets new name `s2'
+    </td>
+  </tr>
+<table>
