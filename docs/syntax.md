@@ -269,8 +269,8 @@
     <td>rename</td>
     <td>( s1 s2 -- )</td>
     <td>
-      if entry named `s1' exists in dictionary,
-      it gets new name `s2'
+      if entry named `s1` exists in dictionary,
+      it gets new name `s2`
     </td>
   </tr>
 <table>
