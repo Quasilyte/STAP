@@ -23,21 +23,21 @@ look for some code inside `examples.el` or `tests.el`.<br>
 
 *Points of interest:*
 
-* [examples](etc/examples.stap)
 * [usage inside Emacs Lisp](etc/examples.el)
+* [examples](etc/examples.stap)
 * [predefined word set](docs/builtins.md)
 * [quick guide into language](docs/LXinYM.md)
 
 <h3>Emacs Stap Features</h3>
 
-This features related only to this implementation.
+*Those features related only to this implementation:*
 
 * inlining right into the Lisp code (full Emacs integration)
 * utilities like stack rollbacks after multiple evaluations (state control)
 
 <h3>Stap features</h3>
 
-We comparing Stap mostly to the Lisp and [G]Forth.
+*We comparing Stap mostly to the Lisp and [G]Forth:*
 
 * case-sensitive reader (most Forths are not)
 * conditionals are not compile-only words
