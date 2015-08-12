@@ -364,6 +364,7 @@
 ;;;; [ FRIEND IMPORTS ] ;;;;
 
 ;; STAP without it is not very user-friendly
-(load-file
+(load
  (expand-file-name "xstap.el" (file-name-directory (or load-file-name
-						       buffer-file-name))))
+						       buffer-file-name)))
+ nil t)

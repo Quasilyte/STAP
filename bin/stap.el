@@ -6,7 +6,7 @@
 (cond ((not argv) (error "path name expected!"))
       ((not (file-exists-p (car argv))) (error "file not found!")))
 
-(load-file (expand-file-name "stap.el" *dir*))
+(load (expand-file-name "stap.el" *dir*) nil t)
 
 (xstap:import (essential math))
 
