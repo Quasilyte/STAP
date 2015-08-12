@@ -19,10 +19,6 @@
   (dolist (rule rules)
     (puthash (car rule) (cdr rule) conv-table)))
 
-(defmacro stap-do-nothing ()
-  "literally, do nothing at all. used for readability"
-  '(lambda ()))
-
 (defun stap-symbol-convert (sym)
   "return modified `sym' if it matches any special pattern, unchanged otherwise"
   (if (= ?& (aref (symbol-name sym) 0))
@@ -39,26 +35,6 @@
     (if (eq 'float type)
 	'integer
       type)))
-
-;;; [ LAMBDA GENERATORS ]
-;;; code generation using Lisp macro
-
-(defmacro stap-non-void-lambda (:pop-sym sym prog)
-  `(lambda ()
-     (let ((,sym (stap-stack-pop)))
-       (stap-stack-push ,prog))))
-
-(defmacro stap-overloaded-op-lambda (type-switch arity)
-  "create lambda calling lisp function returned from `type-switch'"
-  `(lambda ()
-     (let ((top (car stap-stack)))
-       (stap-stack-push (stap-call-with-arity ,type-switch 2)))))
-
-(defmacro stap-n-aggregation-lambda (seq-concat seq-make)
-  `(stap-non-void-lambda
-    :pop-sym n
-    (cond ((> n 0) (,seq-concat (stap-stack-npop n)))
-	  ((< n 0) (,seq-make (abs n) 0)))))
 
 ;;;; [ DATA SECTION ] ;;;;
 
@@ -150,6 +126,25 @@
 (defun stap-dict-fetch (sym)
   "return dictionary entry, if it is stored (nil otherwise)"
   (gethash (stap-symbol-convert sym) stap-dict :not-found))
+
+(defmacro stap-dict-defun (sym io prog)
+  "wrapper for registering dictionary entries"
+  (let ((in (car io)) (out (car (cdr io))))
+    (when out (setq prog (list (if (listp out)
+				   'stap-stack-npush
+				 'stap-stack-push) prog)))
+    (setq in (mapcar (lambda (name)
+		       (if (listp name)
+			   (list (car name) (list 'stap-stack-npop
+						  (car (cdr name))))
+			 (list name '(stap-stack-pop))))
+		     (if (listp in)
+			 in
+		       (list in))))
+    (list 'stap-dict-store sym (list 'lambda nil
+				     (if in
+					 `(let ,in ,prog)
+				       prog)))))
 
 ;;; [ WORDS ]
 ;;; operations defined on `words'
@@ -292,54 +287,44 @@
 	     (stap-stack-push (stap-call-with-arity ',fn ,arity))))))
 
 ;; only 0 number is considered false (can be changed later)
-(stap-dict-store
- '! (lambda ()
-      (let ((top (stap-stack-pop)))
-	(stap-stack-push (if (and (numberp top) (zerop top))
-			     stap-TRUE
-			   stap-FALSE)))))
+(stap-dict-defun
+ '! (top t) (if (and (numberp top) (zerop top))
+		stap-TRUE
+	      stap-FALSE))
+		  
+(stap-dict-defun
+ '+ (1st t) (let ((type (stap-get-type 1st)))
+	      (funcall (pcase type
+			 (`integer '+)
+			 (`string 'concat)
+			 (`vector 'vconcat))
+		       1st
+		       (stap-stack-pop-type (gethash type stap-conv-tables)))))
 
-(stap-dict-store
- '+ (stap-non-void-lambda
-     :pop-sym 1st
-     (let ((type (stap-get-type 1st)))
-       (funcall (pcase type
-		  (`integer '+)
-		  (`string 'concat)
-		  (`vector 'vconcat))
-		1st
-		(stap-stack-pop-type (gethash type stap-conv-tables))))))
-
-(stap-dict-store
- '= (stap-non-void-lambda
-     :pop-sym 1st
-     (let ((type (stap-get-type 1st))
-	   (2nd (stap-stack-pop)))
-       (if (eq 'integer type)
-	   (= 1st 2nd)
-	 (equal 1st 2nd)))))
+(stap-dict-defun '= ((1st 2nd) t) (let ((type (stap-get-type 1st)))
+				    (if (eq 'integer type)
+					(= 1st 2nd)
+				      (equal 1st 2nd))))
 
 ;;; [ PREDEFINED: STACK ]
 ;;; common ways to work with parameter stack
 
-(stap-dict-store
- 'shake (lambda ()
-	  (let* ((n (stap-stack-pop))
-		 (fmt (mapcar (lambda (c) (- c ?0)) (stap-stack-pop)))
-		 (slice (stap-stack-npop n)))
-	    (stap-stack-npush (mapcar (lambda (pos)
-					(nth pos slice)) fmt)))))
+(stap-dict-defun
+ 'shake (n (t)) (let ((fmt (mapcar (lambda (c) (- c ?0)) (stap-stack-pop)))
+		      (slice (stap-stack-npop n)))
+		  (mapcar (lambda (pos)
+			    (nth pos slice)) fmt)))
 
-(stap-dict-store 'count (lambda () (stap-stack-push (length stap-stack))))
+(stap-dict-defun 'count (nil t) (length stap-stack))
 
-(stap-dict-store 'pop (lambda () (setq stap-stash (stap-stack-pop))))
+(stap-dict-defun 'pop (scalar nil) (setq stap-stash scalar))
 
-(stap-dict-store 'push (lambda () (stap-stack-push stap-stash)))
+(stap-dict-defun 'push (nil nil) (stap-stack-push stap-stash))
 
 ;;; [ PREDEFINED: DISPLAY ] # deprecated
 ;;; words useful for debugging and interactive development
 
-(stap-dict-store
+(stap-dict-store ;; soon will be removed
  '@describe (lambda ()
 	      (let* ((sym (intern-soft (stap-stack-pop)))
 		     (body (stap-dict-fetch (stap-symbol-convert sym))))
@@ -350,42 +335,36 @@
 ;;; [ PREDEFINED: CONTROL FLOW ]
 ;;; conditionals, loops (if any will ever appear, they should be here)
 
-(stap-dict-store
- 'if (lambda () (when (= stap-FALSE (stap-stack-pop))
-		  (stap-skip-tokens-until (or (eq 'endif token)
-					      (eq 'else token))))))
+(stap-dict-defun
+ 'if (nil nil) (when (= stap-FALSE (stap-stack-pop))
+		 (stap-skip-tokens-until (or (eq 'endif token)
+					     (eq 'else token)))))
 
-(stap-dict-store
- 'else (lambda () (stap-skip-tokens-until (or (eq 'endif token)
-					      (eq 'else token)))))
+(stap-dict-defun
+ 'else (nil nil) (stap-skip-tokens-until (or (eq 'endif token)
+					     (eq 'else token))))
 
-(stap-dict-store 'endif (stap-do-nothing))
+(stap-dict-defun 'endif (nil nil) '())
 
 ;;; [ PREDEFINED: SEQUENCE ]
 ;;; sequence operations (vectors & strings)
 
-(stap-dict-store
- 'nth (stap-non-void-lambda :pop-sym index (elt (car stap-stack) index)))
+(stap-dict-defun 'nth (index t) (elt (car stap-stack) index))
 
-(stap-dict-store
- 'len (lambda ()
-	(stap-stack-push (length (car stap-stack)))))
+(stap-dict-defun 'len (nil t) (length (car stap-stack)))
 
-(stap-dict-store
- 'set (lambda ()
-	(let ((value (stap-stack-pop)) (index (stap-stack-pop)))
-	  (aset (car stap-stack) index value))))
+(stap-dict-defun
+ 'set ((val index) nil) (aset (car stap-stack) index val))
 
-(stap-dict-store
- 'split (lambda ()
-	  (setq stap-stack (append (stap-stack-pop) stap-stack))))
+(stap-dict-defun 'split (seq nil) (setq stap-stack (append seq stap-stack)))
 
-(stap-dict-store 'vec (stap-n-aggregation-lambda vconcat make-vector))
+(stap-dict-defun 'vec (n t) (cond ((> n 0) (vconcat (stap-stack-npop n)))
+				  ((< n 0) (make-vector (abs n) 0))))
 
-(stap-dict-store 'str (stap-n-aggregation-lambda concat make-string))
+(stap-dict-defun 'str (n t) (cond ((> n 0) (concat (stap-stack-npop n)))
+				  ((< n 0) (make-string (abs n) 0))))
 
-(stap-dict-store
- 'copy (lambda () (stap-stack-push (copy-sequence (car stap-stack)))))
+(stap-dict-defun 'copy (nil t) (copy-sequence (car stap-stack)))
 
 ;;; [ PREDEFINED: ENVIRONMENT ]
 ;;; provides API for communicating with executing interpreter and OS
@@ -398,11 +377,18 @@
 	       (stap-dict-store (car syms) entry)
 	       (stap-dict-remove (car (cdr syms)))))))
 
-(stap-dict-store
- 'query (lambda ()
-	  (stap-stack-push (shell-command-to-string (stap-stack-pop)))
-	  (when (not (string= "" (car stap-stack)))
-	    (message "> `%s'" (car stap-stack)))))
+(stap-dict-defun
+ 'rename (((names 2)) nil) (let* ((syms (mapcar 'stap-intern-symbol names))
+				  (entry (stap-dict-fetch (car (cdr syms)))))
+			     (when (not (eq :not-found entry))
+			       (stap-dict-store (car syms) entry)
+			       (stap-dict-remove (car (cdr syms))))))
+
+(stap-dict-defun
+ 'query (cmd t) (let ((output (shell-command-to-string cmd)))
+		  (when (not (string= "" output))
+		    (message "> `%s'" output))
+		  output))
 
 ;;;; [ FRIEND IMPORTS ] ;;;;
 

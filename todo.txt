@@ -25,6 +25,8 @@
   or it should be implemented through `query'?
   the functions is-a string/vec/num are missing
 
+* should `=' also make type conversions?
+
 ============
 === MUST ===
 
@@ -49,4 +51,6 @@
   to put them reversed order (to avoid nreverse call at the end).
   if it is, check the results (measure runtime)
 
-* if endif is omitted, many strange things may happen!
+* replace all usages of raw `stap-dict-store' with `stap-dict-defun'
+
+* refactor data section
