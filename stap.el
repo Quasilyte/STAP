@@ -239,7 +239,7 @@
 		   (1- 1)
 		   (neg - 1)))
   (let* ((word (car binding))
-	 (fn (if (= 2 (length binding)) word (cadr binding)))
+	 (fn (if (= 2 (length binding)) word (car (cdr binding))))
 	 (arity (car (last binding))))
     (stap-dict-store
      word `(lambda ()
@@ -281,14 +281,9 @@
 (stap-dict-store
  'push (lambda () (stap-stack-push stap-stash)))
 
-;;; [ PREDEFINED: DISPLAY ]
+;;; [ PREDEFINED: DISPLAY ] # deprecated
 ;;; words useful for debugging and interactive development
 
-(stap-dict-store
- '@one (lambda () (message "%s" (stap-stack-pop))))
-
-(stap-dict-store
- '@all (lambda () (message "<%d> %s" (length stap-stack) stap-stack)))
 
 (stap-dict-store
  '@describe (lambda ()
@@ -348,18 +343,24 @@
 
 (stap-dict-store
  'copy (lambda ()
-	 (stap-stack-push (copy-seq (car stap-stack)))))
+	 (stap-stack-push (copy-sequence (car stap-stack)))))
 
-;;; [ PREDEFINED: DICTIONARY ]
-;;; provides some control to manipulate dictionary from STAP code
+;;; [ PREDEFINED: ENVIRONMENT ]
+;;; provides API for communicating with executing interpreter and OS
 
 (stap-dict-store
  'rename (lambda ()
 	   (let* ((syms (mapcar 'stap-intern-symbol (stap-stack-npop 2)))
-		  (entry (stap-dict-fetch (cadr syms))))
+		  (entry (stap-dict-fetch (car (cdr syms)))))
 	     (when (not (eq :not-found entry))
 	       (stap-dict-store (car syms) entry)
-	       (stap-dict-remove (cadr syms))))))
+	       (stap-dict-remove (car (cdr syms)))))))
+
+(stap-dict-store
+ 'query (lambda ()
+	  (stap-stack-push (shell-command-to-string (stap-stack-pop)))
+	  (when (not (string= "" (car stap-stack)))
+	    (message "> `%s'" (car stap-stack)))))
 
 ;;;; [ FRIEND IMPORTS ] ;;;;
 

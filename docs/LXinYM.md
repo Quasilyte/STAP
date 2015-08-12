@@ -75,9 +75,9 @@ count ndrop ( cleans the stack completely )
 1 1 = ( => -1 (everything except 0 is true) )
 -1 !  ( => 0 ) drop-all
 
-0 1 = ! if "true" endif                         ( => "true" ) drop
-0 0 = if "true" else "false" endif              ( => "true" ) drop
-0 if "one" else 0 0 = if "two" else "three" endif ( => "two" )   drop
+0 1 = ! if "true" endif                           ( => "true" ) drop
+0 0 = if "true" else "false" endif                ( => "true" ) drop
+0 if "one" else 0 0 = if "two" else "three" endif ( => "two" )  drop
 
 { fib ( n -- n ) 
   1- dup 1 > if dup fib swap 1- fib + endif }

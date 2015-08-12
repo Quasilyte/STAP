@@ -10,10 +10,12 @@
 
 (xstap:import (essential math))
 
-(with-temp-buffer
-  (insert "(xstap: ")
-  (insert-file-contents (car argv))
-  (goto-char (point-max)) 
-  (insert ")")
-  (eval-buffer))
+(setq *elapsed* (benchmark-run (with-temp-buffer
+				 (insert "(xstap: ")
+				 (insert-file-contents (car argv))
+				 (goto-char (point-max)) 
+				 (insert ")")
+				 (eval-buffer))))
+
+(message "[%s seconds]" (- (car *elapsed*) (nth 2 *elapsed*)))
 

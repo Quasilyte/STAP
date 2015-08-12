@@ -1,6 +1,9 @@
-"hello, world!" @one ( canonical first program )
+{ @one "echo -n " swap + query drop }
+{ @all
+  count store vec copy split
+  { && @one } push times }
 
-{ & } 5 loop
+"1" "2" "3" "four"
 
 @all
 

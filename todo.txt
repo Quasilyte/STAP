@@ -21,6 +21,10 @@
   it is vital, because `!' operator must know whenever
   the arguments are true or false to invert them
 
+* do language need builtin introspection
+  or it should be implemented through `query'?
+  the functions is-a string/vec/num are missing
+
 ============
 === MUST ===
 
