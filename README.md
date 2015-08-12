@@ -19,6 +19,15 @@ look for some code inside `examples.el` or `tests.el`.<br>
 **This is in active development, so anything can happen.**<br>
 **Code you write today in Stap can fail with an error with tomorrow version!**
 
+<h3>Navigation</h3>
+
+*Points of interest:*
+
+* [examples](etc/examples.stap)
+* [usage inside Emacs Lisp](etc/examples.el)
+* [predefined word set](docs/builtins.md)
+* [quick guide into language](docs/LXinYM.md)
+
 <h3>Emacs Stap Features</h3>
 
 This features related only to this implementation.

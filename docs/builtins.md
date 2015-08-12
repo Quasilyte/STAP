@@ -1,5 +1,14 @@
 <h3>STAP predefined word set</h3>
 
+All those words are required to be shipped with particular<br>
+implementation as builtins. <br>
+
+<br>
+
+Implementer can add some more words for user convenience,<br>
+but prefered way is to define them inside language as standard library<br>
+and by extending available inputs for `query` word.
+
 <h4>Data types</h4>
 
 <table>
@@ -81,43 +90,6 @@
     <td>
       removes `n1` elements from stack, applies
       `v1` transformation using deleted elements
-    </td>
-  </tr>
-<table>
-
-<h4>Printing operations</h4>
-
-<table>
-  <tr>
-    <th>Symbol</th>
-    <th>Signature</th>
-    <th>Description</th>
-  </tr>
-
-  <tr>
-    <td>@one</td>
-    <td>( a1 -- )</td>
-    <td>
-      drops top stack element and prints its value
-      to the *Messages* buffer
-    </td>
-  </tr>
-
-  <tr>
-    <td>@all</td>
-    <td>( -- )</td>
-    <td>
-      without modifying the stack prints its current
-      size plus all contained values
-    </td>
-  </tr>
-
-  <tr>
-    <td>@describe</td>
-    <td>( s1 -- )</td>
-    <td>
-      lookup for word in dictionary by given string and print
-      the result
     </td>
   </tr>
 <table>
@@ -256,13 +228,22 @@
   </tr>
 <table>
 
-<h4>Dictionary I/O</h4>
+<h4>Environment Communication</h4>
 
 <table>
   <tr>
     <th>Symbol</th>
     <th>Signature</th>
     <th>Description</th>
+  </tr>
+
+  <tr>
+    <td>query</td>
+    <td>( s1 -- s2 )</td>
+    <td>
+      passes `s1` request to the interpreter.
+      response returned in form of (possible empty) string `s2`.
+    </td>
   </tr>
 
   <tr>
