@@ -12,24 +12,12 @@
 ;;
 ;; e.g. `{' and `}' are tags, but `IF' is a word
 
-;;;; [ DATA SECTION ] ;;;;
-
-(defconst stap-TRUE -1 "Forth usually returns -1 as truth value")
-(defconst stap-FALSE 0 "only zero is considered as falsy value")
-
-;; STAP environment variables
-(setq stap-stack '() ; main data stack for execution
-      stap-stash '() ; pop'ed elements goes in here
-      stap-tokens '() ; usually this is an input data for interpreter
-      stap-new-word '() ; car is word-symbol, cdr is its body
-      stap-dict (make-hash-table :test 'equal) ; all defined words
-      stap-eval-mode :interpret ;; can be `:interpret' or `:compile'
-      stap-nest-level 0) ;; counter for nested definitions to find balanced }
-
-;;;; [ CORE ] ;;;;
-
-;;; [ MISCELLANEOUS ]
+;;;; [ MISCELLANEOUS ] ;;;;
 ;;; something not so tightly related to the STAP or its components
+
+(defun stap-init-conv-table (conv-table rules)
+  (dolist (rule rules)
+    (puthash (car rule) (cdr rule) conv-table)))
 
 (defmacro stap-do-nothing ()
   "literally, do nothing at all. used for readability"
@@ -44,6 +32,71 @@
 (defun stap-intern-symbol (s)
   "convert and intern given string"
   (stap-symbol-convert (intern s)))
+
+(defun stap-get-type (any)
+  "like `type-of', but returns `integer' instead of `float'"
+  (let ((type (type-of any)))
+    (if (eq 'float type)
+	'integer
+      type)))
+
+;;; [ LAMBDA GENERATORS ]
+;;; code generation using Lisp macro
+
+(defmacro stap-non-void-lambda (:pop-sym sym prog)
+  `(lambda ()
+     (let ((,sym (stap-stack-pop)))
+       (stap-stack-push ,prog))))
+
+(defmacro stap-overloaded-op-lambda (type-switch arity)
+  "create lambda calling lisp function returned from `type-switch'"
+  `(lambda ()
+     (let ((top (car stap-stack)))
+       (stap-stack-push (stap-call-with-arity ,type-switch 2)))))
+
+(defmacro stap-n-aggregation-lambda (seq-concat seq-make)
+  `(stap-non-void-lambda
+    :pop-sym n
+    (cond ((> n 0) (,seq-concat (stap-stack-npop n)))
+	  ((< n 0) (,seq-make (abs n) 0)))))
+
+;;;; [ DATA SECTION ] ;;;;
+
+(defconst stap-TRUE -1 "Forth usually returns -1 as truth value")
+(defconst stap-FALSE 0 "only zero is considered as falsy value")
+
+;; STAP environment variables
+(setq stap-stack '() ; main data stack for execution
+      stap-stash '() ; pop'ed elements goes in here
+      
+      stap-tokens '() ; usually this is an input data for interpreter
+      stap-new-word '() ; car is word-symbol, cdr is its body
+      stap-dict (make-hash-table :test 'equal) ; all defined words
+      stap-eval-mode :interpret ;; can be `:interpret' or `:compile'
+      stap-nest-level 0 ;; counter for nested definitions to find balanced }
+
+      stap-conv-tables (make-hash-table :test 'eq :size 3)
+      stap-num-conv-table (make-hash-table :test 'eq :size 3)
+      stap-str-conv-table (make-hash-table :test 'eq :size 3)
+      stap-vec-conv-table (make-hash-table :test 'eq :size 3))
+
+;; i have no idea how to express [] -> number
+(stap-init-conv-table stap-num-conv-table '((integer . identity)
+					    (string . string-to-number)))
+
+(stap-init-conv-table stap-str-conv-table '((integer . number-to-string)
+					    (string . identity)
+					    (vector . concat)))
+
+(stap-init-conv-table stap-vec-conv-table '((integer . vector)
+					    (string . vconcat)
+					    (vector . identity)))
+
+(puthash 'integer stap-num-conv-table stap-conv-tables)
+(puthash 'string stap-str-conv-table stap-conv-tables)
+(puthash 'vector stap-vec-conv-table stap-conv-tables)
+
+;;;; [ CORE ] ;;;;
 
 ;;; [ STACK ]
 ;;; operations defined on `stack' (also known as data or parameter stack)
@@ -67,7 +120,11 @@
       (push (stap-stack-pop) li)
       (setq n (1- n)))
     (nreverse li)))
- 
+
+(defun stap-stack-pop-type (conv-table)
+  (let ((top (stap-stack-pop)))
+    (funcall (gethash (type-of top) conv-table) top)))
+
 (defun stap-stack-push (scalar)
   "push scalar on top of the stack"
   (push (pcase scalar
@@ -113,17 +170,6 @@
 (defun stap-call-with-arity (fn arity)
   "call lisp function with args passed from the e4 stack"
   (apply fn (nreverse (stap-stack-npop arity))))
-
-(defmacro stap-overloaded-op-lambda (type-switch arity)
-  "create lambda calling lisp function returned from `type-switch'"
-  `(lambda ()
-     (let ((top (car stap-stack)))
-       (stap-stack-push (stap-call-with-arity ,type-switch 2)))))
-
-(defmacro stap-n-aggregation-lambda (n-cond)
-  `(lambda ()
-     (let ((n (stap-stack-pop)))
-       (stap-stack-push ,n-cond))))
 
 ;;; [ TOKENS ]
 ;;; operations defined on `tokens'
@@ -254,12 +300,24 @@
 			   stap-FALSE)))))
 
 (stap-dict-store
- '+ (stap-overloaded-op-lambda (cond ((numberp top) '+)
-				     ((stringp top) 'concat)) 2))
+ '+ (stap-non-void-lambda
+     :pop-sym 1st
+     (let ((type (stap-get-type 1st)))
+       (funcall (pcase type
+		  (`integer '+)
+		  (`string 'concat)
+		  (`vector 'vconcat))
+		1st
+		(stap-stack-pop-type (gethash type stap-conv-tables))))))
 
 (stap-dict-store
- '= (stap-overloaded-op-lambda (cond ((numberp top) '=)
-				     ((stringp top) 'string=)) 2))
+ '= (stap-non-void-lambda
+     :pop-sym 1st
+     (let ((type (stap-get-type 1st))
+	   (2nd (stap-stack-pop)))
+       (if (eq 'integer type)
+	   (= 1st 2nd)
+	 (equal 1st 2nd)))))
 
 ;;; [ PREDEFINED: STACK ]
 ;;; common ways to work with parameter stack
@@ -272,18 +330,14 @@
 	    (stap-stack-npush (mapcar (lambda (pos)
 					(nth pos slice)) fmt)))))
 
-(stap-dict-store
- 'count (lambda () (stap-stack-push (length stap-stack))))
+(stap-dict-store 'count (lambda () (stap-stack-push (length stap-stack))))
 
-(stap-dict-store
- 'pop (lambda () (setq stap-stash (stap-stack-pop))))
+(stap-dict-store 'pop (lambda () (setq stap-stash (stap-stack-pop))))
 
-(stap-dict-store
- 'push (lambda () (stap-stack-push stap-stash)))
+(stap-dict-store 'push (lambda () (stap-stack-push stap-stash)))
 
 ;;; [ PREDEFINED: DISPLAY ] # deprecated
 ;;; words useful for debugging and interactive development
-
 
 (stap-dict-store
  '@describe (lambda ()
@@ -297,26 +351,21 @@
 ;;; conditionals, loops (if any will ever appear, they should be here)
 
 (stap-dict-store
- 'if (lambda ()
-       (when (= stap-FALSE (stap-stack-pop))
-	 (stap-skip-tokens-until (or (eq 'endif token)
-				     (eq 'else token))))))
+ 'if (lambda () (when (= stap-FALSE (stap-stack-pop))
+		  (stap-skip-tokens-until (or (eq 'endif token)
+					      (eq 'else token))))))
 
 (stap-dict-store
- 'else (lambda ()
-	 (stap-skip-tokens-until (or (eq 'endif token)
-				     (eq 'else token)))))
+ 'else (lambda () (stap-skip-tokens-until (or (eq 'endif token)
+					      (eq 'else token)))))
 
-(stap-dict-store
- 'endif (stap-do-nothing))
+(stap-dict-store 'endif (stap-do-nothing))
 
 ;;; [ PREDEFINED: SEQUENCE ]
 ;;; sequence operations (vectors & strings)
 
 (stap-dict-store
- 'nth (lambda ()
-	(let ((index (stap-stack-pop)))
-	  (stap-stack-push (elt (car stap-stack) index)))))
+ 'nth (stap-non-void-lambda :pop-sym index (elt (car stap-stack) index)))
 
 (stap-dict-store
  'len (lambda ()
@@ -331,19 +380,12 @@
  'split (lambda ()
 	  (setq stap-stack (append (stap-stack-pop) stap-stack))))
 
-(stap-dict-store
- 'vec (stap-n-aggregation-lambda (cond ((stringp n) (vconcat n))
-				       ((> n 0) (vconcat (stap-stack-npop n)))
-				       ((< n 0) (make-vector (abs n) 0)))))
+(stap-dict-store 'vec (stap-n-aggregation-lambda vconcat make-vector))
+
+(stap-dict-store 'str (stap-n-aggregation-lambda concat make-string))
 
 (stap-dict-store
- 'str (stap-n-aggregation-lambda (cond ((vectorp n) (concat n))
-				       ((> n 0) (concat (stap-stack-npop n)))
-				       ((< n 0) (make-string (abs n) 0)))))
-
-(stap-dict-store
- 'copy (lambda ()
-	 (stap-stack-push (copy-sequence (car stap-stack)))))
+ 'copy (lambda () (stap-stack-push (copy-sequence (car stap-stack)))))
 
 ;;; [ PREDEFINED: ENVIRONMENT ]
 ;;; provides API for communicating with executing interpreter and OS

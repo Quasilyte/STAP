@@ -1,9 +1,10 @@
-{ @one "echo -n " swap + query drop }
+{ quotes "'" swap "" + + "'" + }
+{ @one quotes "echo -ne " + query drop }
 { @all
-  count store vec copy split
-  { && @one } push times }
+  count dup "count: " + @one
+  store vec copy split
+  { && "\t" + @one } push times }
 
-"1" "2" "3" "four"
+1 2 3 "four!"
 
 @all
-
