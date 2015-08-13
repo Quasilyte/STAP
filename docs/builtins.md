@@ -3,13 +3,13 @@
 **Current word count: 18**
 
 All those words are required to be shipped with particular<br>
-implementation as builtins. <br>
+implementation as builtins.
 
 <br>
 
 Implementer can add some more words for user convenience,<br>
 but prefered way is to define them inside language as standard library<br>
-and by extending available inputs for `query` word.<br>
+and by extending available inputs for `query` word.
 
 <br>
 
@@ -282,7 +282,7 @@ Those abbreviations are used alongside whole document.
     <td>num!</td>
     <td>( a1 -- n1 )</td>
     <td>
-      given `a1' tries to return it as a number.
+      given `a1` tries to return it as a number.
       if it fails, program terminates with error message.
     </td>
   </tr>
@@ -291,7 +291,7 @@ Those abbreviations are used alongside whole document.
     <td>str!</td>
     <td>( a1 -- s1 )</td>
     <td>
-      given `a1' tries to return it as a string.
+      given `a1` tries to return it as a string.
       if it fails, program terminates with error message.
     </td>
   </tr>
@@ -300,7 +300,7 @@ Those abbreviations are used alongside whole document.
     <td>vec!</td>
     <td>( a1 -- v1 )</td>
     <td>
-      wraps element in a vector if and only if it
+      wraps `a1` element in a vector if and only if it
       is not vector already. never fails.
     </td>
   </tr>
