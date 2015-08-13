@@ -38,10 +38,15 @@
 
 ;;;; [ DATA SECTION ] ;;;;
 
+;;; [ CONSTANTS ]
+;;; named bindings for literals
+
 (defconst stap-TRUE -1 "Forth usually returns -1 as truth value")
 (defconst stap-FALSE 0 "only zero is considered as falsy value")
 
-;; STAP environment variables
+;;; [ RUNTIME VARIABLES ]
+;;; state of the STAP environment in those
+
 (setq stap-stack '() ; main data stack for execution
       stap-stash '() ; pop'ed elements goes in here
       
@@ -56,13 +61,20 @@
       stap-str-conv-table (make-hash-table :test 'eq :size 3)
       stap-vec-conv-table (make-hash-table :test 'eq :size 3))
 
-;; i have no idea how to express [] -> number
-(stap-init-conv-table stap-num-conv-table '((integer . identity)
+;;; [ CONVERSION RULES ]
+;;; description of how one data types should be coerced into another
+
+(stap-init-conv-table stap-num-conv-table `((integer . identity)
 					    (string . string-to-number)))
 
-(stap-init-conv-table stap-str-conv-table '((integer . number-to-string)
-					    (string . identity)
-					    (vector . concat)))
+(stap-init-conv-table
+ stap-str-conv-table (list '(integer . number-to-string)
+			   '(string . identity)
+			   (cons 'vector (lambda (vect)
+					   (let ((1st (aref vect 0)))
+					     (if (stringp 1st)
+						 1st
+					       (concat vect)))))))
 
 (stap-init-conv-table stap-vec-conv-table '((integer . vector)
 					    (string . vconcat)
@@ -130,21 +142,25 @@
 (defmacro stap-dict-defun (sym io prog)
   "wrapper for registering dictionary entries"
   (let ((in (car io)) (out (car (cdr io))))
-    (when out (setq prog (list (if (listp out)
-				   'stap-stack-npush
-				 'stap-stack-push) prog)))
+    (when out
+      (setq prog (list (if (listp out)
+			   'stap-stack-npush
+			 'stap-stack-push)
+		       prog)))
     (setq in (mapcar (lambda (name)
 		       (if (listp name)
-			   (list (car name) (list 'stap-stack-npop
-						  (car (cdr name))))
+			   (let ((name (car name)) (n (car (cdr name))))
+			     (list name (list 'stap-stack-npop n)))
 			 (list name '(stap-stack-pop))))
 		     (if (listp in)
 			 in
 		       (list in))))
-    (list 'stap-dict-store sym (list 'lambda nil
-				     (if in
-					 `(let ,in ,prog)
-				       prog)))))
+    (list 'stap-dict-store
+	  sym
+	  (list 'lambda nil
+		(if in
+		    `(let ,in ,prog)
+		  prog)))))
 
 ;;; [ WORDS ]
 ;;; operations defined on `words'
