@@ -245,6 +245,32 @@
 	 (stap-interpreting-eval token)
        (stap-compiling-eval token)))))
 
+;;; [ QUERY ]
+;;; handle STAP requests made by `query' word
+
+(defun stap-query-bash (msg)
+  "pass `msg' to bash interpreter, return printed output"
+  (let ((output (shell-command-to-string msg)))
+    (when (not (string= "" output)) 
+      (message "> `%s'" output)) ; not empty output is printed
+    (stap-stack-push output)))
+
+(defun stap-command-describe (name)
+  (let* ((sym (intern-soft name))
+	 (body (stap-dict-fetch (stap-symbol-convert sym))))
+    (if body
+	(message "`%s' %s" sym body)
+      (message "word `%s' is not defined" sym))))
+
+(defun stap-query-command (msg)
+  "parse `msg' and execute special command"
+  (let* ((msg (split-string msg))
+	 (cmd (car msg))
+	 (arg (car (cdr msg))))
+    (funcall (pcase cmd
+	       ("describe" 'stap-command-describe))
+	     arg)))
+
 ;;;; [ BUILTINS ] ;;;;
 
 ;;; [ PREDEFINED: FUNDAMENTAL ]
@@ -293,17 +319,6 @@
 (stap-dict-defun 'pop (scalar nil) (setq stap-stash scalar))
 
 (stap-dict-defun 'push (nil nil) (stap-stack-push stap-stash))
-
-;;; [ PREDEFINED: DISPLAY ] # deprecated
-;;; words useful for debugging and interactive development
-
-(stap-dict-store ;; soon will be removed
- '@describe (lambda ()
-	      (let* ((sym (intern-soft (stap-stack-pop)))
-		     (body (stap-dict-fetch (stap-symbol-convert sym))))
-		(if body
-		    (message "%s: %s" sym body)
-		  (message "word `%s' is not defined" sym)))))
 
 ;;; [ PREDEFINED: CONTROL FLOW ]
 ;;; conditionals, loops (if any will ever appear, they should be here)
@@ -372,10 +387,9 @@
 			       (stap-dict-remove (car (cdr syms))))))
 
 (stap-dict-defun
- 'query (cmd t) (let ((output (shell-command-to-string cmd)))
-		  (when (not (string= "" output))
-		    (message "> `%s'" output))
-		  output))
+ 'query (msg nil) (if (= ?$ (aref msg 0))
+		      (stap-query-bash (substring msg 1))
+		    (stap-query-command msg)))
 
 ;;;; [ FRIEND IMPORTS ] ;;;;
 
