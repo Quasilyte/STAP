@@ -1,6 +1,6 @@
 <h3>STAP predefined word set</h3>
 
-**Current word count: 18**
+**Current word count: 19**
 
 All those words are required to be shipped with particular<br>
 implementation as builtins.<br>
@@ -65,25 +65,7 @@ Those abbreviations are used alongside whole document.
     <th>Signature</th>
     <th>Description</th>
   </tr>
-
-  <tr>
-    <td>pop</td>
-    <td>( a1 -- )</td>
-    <td>
-      takes top stack element and stores it until next `pop`
-      override the value
-    </td>
-  </tr>
-
-  <tr>
-    <td>push</td>
-    <td>( -- a1 )</td>
-    <td>
-      puts stored (after last `pop`) element on top
-      of the stack
-    </td>
-  </tr>
-
+  
   <tr>
     <td>count</td>
     <td>( -- n1 )</td>
@@ -99,6 +81,42 @@ Those abbreviations are used alongside whole document.
     <td>
       removes `n1` elements from stack, applies
       `s1` transformation using deleted elements
+    </td>
+  </tr>
+<table>
+
+<h4>Local-stash Operations</h4>
+
+<table>
+  <tr>
+    <th>Symbol</th>
+    <th>Signature</th>
+    <th>Description</th>
+  </tr>
+
+  <tr>
+    <td>pop</td>
+    <td>( a1 -- )</td>
+    <td>
+      takes top stack element `a1` and stores it until next `pop`
+      override the value
+    </td>
+  </tr>
+
+  <tr>
+    <td>push</td>
+    <td>( -- a1 )</td>
+    <td>
+      puts stored (after last `pop`) `a1` element on top
+      of the stack
+    </td>
+  </tr>
+
+  <tr>
+    <td>store</td>
+    <td>( -- )</td>
+    <td>
+      save top stack element into local stash.
     </td>
   </tr>
 <table>

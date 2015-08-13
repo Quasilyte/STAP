@@ -325,9 +325,14 @@
 
 (stap-dict-defun 'count (nil t) (length stap-stack))
 
+;;; [ PREDEFINED: STASH ]
+;;; definition-local storage
+
 (stap-dict-defun 'pop (scalar nil) (setcar stap-context scalar))
 
 (stap-dict-defun 'push (nil nil) (stap-stack-push (car stap-context)))
+
+(stap-dict-defun 'store (nil nil) (setcar stap-context (car stap-stack)))
 
 ;;; [ PREDEFINED: CONTROL FLOW ]
 ;;; conditionals, loops (if any will ever appear, they should be here)

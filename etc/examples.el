@@ -22,7 +22,7 @@
    { next "foo"
    { next "bar"
    { next "baz" } } } }
-   { next sequence-reset }
+ { next reset }
        
  ( prints "for", "bar", "baz" )
  
