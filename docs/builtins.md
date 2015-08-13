@@ -1,5 +1,7 @@
 <h3>STAP predefined word set</h3>
 
+**Current word count: 18**
+
 All those words are required to be shipped with particular<br>
 implementation as builtins. <br>
 
@@ -7,9 +9,20 @@ implementation as builtins. <br>
 
 Implementer can add some more words for user convenience,<br>
 but prefered way is to define them inside language as standard library<br>
-and by extending available inputs for `query` word.
+and by extending available inputs for `query` word.<br>
 
-<h4>Data types</h4>
+<br>
+
+While it seems like an agressive rule, this should help to<br>
+isolate standard specified and implementation-specific features.<br>
+For example, `describe' is external command mostly because<br>
+what it actually prints can depend on internal representation of<br>
+STAP code and programmer should look at real picture rather than<br>
+convenient, but falsy image.
+
+<h4>Type Legend</h4>
+
+Those abbreviations are used alongside whole document.
 
 <table>
   <tr>
@@ -86,10 +99,10 @@ and by extending available inputs for `query` word.
 
   <tr>
     <td>shake</td>
-    <td>( v1 n1 -- ? )</td>
+    <td>( s1 n1 -- ? )</td>
     <td>
       removes `n1` elements from stack, applies
-      `v1` transformation using deleted elements
+      `s1` transformation using deleted elements
     </td>
   </tr>
 <table>
@@ -192,12 +205,12 @@ and by extending available inputs for `query` word.
       should occupy new vector `v1`
     </td>
   </tr>
-
+  
   <tr>
-    <td>vec(convert)</td>
-    <td>( s1 -- v1 )</td>
+    <td>vec(concat)</td>
+    <td>( v1 v2 -- v3 )</td>
     <td>
-      convert string `s1` into `v1` vector
+      return the result of appending `v1` to `v2`
     </td>
   </tr>
   
@@ -220,10 +233,10 @@ and by extending available inputs for `query` word.
   </tr>
 
   <tr>
-    <td>str(convert)</td>
-    <td>( v1 -- s1 )</td>
+    <td>str(concat)</td>
+    <td>( s1 s2 -- s3 )</td>
     <td>
-      convert vector `v1` into `s1` string
+      return the result of appending `s1` to `s2`
     </td>
   </tr>
 <table>
@@ -239,10 +252,10 @@ and by extending available inputs for `query` word.
 
   <tr>
     <td>query</td>
-    <td>( s1 -- s2 )</td>
+    <td>( s1 -- ? )</td>
     <td>
       passes `s1` request to the interpreter.
-      response returned in form of (possible empty) string `s2`.
+      depending on query, may or may not return something
     </td>
   </tr>
 
@@ -255,3 +268,41 @@ and by extending available inputs for `query` word.
     </td>
   </tr>
 <table>
+
+<h4>Type Assertions</h4>
+
+<table>
+  <tr>
+    <th>Symbol</th>
+    <th>Signature</th>
+    <th>Description</th>
+  </tr>
+
+  <tr>
+    <td>num!</td>
+    <td>( a1 -- n1 )</td>
+    <td>
+      given `a1' tries to return it as a number.
+      if it fails, program terminates with error message.
+    </td>
+  </tr>
+  
+  <tr>
+    <td>str!</td>
+    <td>( a1 -- s1 )</td>
+    <td>
+      given `a1' tries to return it as a string.
+      if it fails, program terminates with error message.
+    </td>
+  </tr>
+  
+  <tr>
+    <td>vec!</td>
+    <td>( a1 -- v1 )</td>
+    <td>
+      wraps element in a vector if and only if it
+      is not vector already. never fails.
+    </td>
+  </tr>
+<table>
+
