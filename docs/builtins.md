@@ -3,19 +3,15 @@
 **Current word count: 18**
 
 All those words are required to be shipped with particular<br>
-implementation as builtins.
-
+implementation as builtins.<br>
 <br>
-
 Implementer can add some more words for user convenience,<br>
 but prefered way is to define them inside language as standard library<br>
-and by extending available inputs for `query` word.
-
+and by extending available inputs for `query` word.<br>
 <br>
-
 While it seems like an agressive rule, this should help to<br>
 isolate standard specified and implementation-specific features.<br>
-For example, `describe' is external command mostly because<br>
+For example, `describe` is external command mostly because<br>
 what it actually prints can depend on internal representation of<br>
 STAP code and programmer should look at real picture rather than<br>
 convenient, but falsy image.
