@@ -1,10 +1,19 @@
-{ quotes "'" swap "" + + "'" + }
-{ @one quotes "echo -ne " + query drop }
+{ quote
+   str! "'" "'"
+   "021" 3 shake
+   str str }
+
+{ @one
+  quote "$echo -ne " str
+  query drop }
+
 { @all
-  count dup "count: " + @one
-  store vec copy split
-  { && "\t" + @one } push times }
+  count vec
+  "\n" pop
+  { &mapcat
+    vec! split
+    str! "\n" swap str push str pop }
+  reduce
+  push quote "$echo -ne " str
+  query drop drop }
 
-1 2 3 "four!"
-
-@all

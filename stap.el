@@ -43,11 +43,10 @@
 ;;; [ RUNTIME VARIABLES ]
 ;;; state of the STAP environment in those
 
-(setq stap-stack '() ; main data stack for execution
-      stap-stash '() ; pop'ed elements goes in here
-      
+(setq stap-stack '() ; main data stack for execution      
       stap-tokens '() ; usually this is an input data for interpreter
       stap-new-word '() ; car is word-symbol, cdr is its body
+      stap-context '() ; word-local environment
       stap-dict (make-hash-table :test 'equal) ; all defined words
       stap-eval-mode :interpret ;; can be `:interpret' or `:compile'
       stap-nest-level 0) ;; counter for nested definitions to find balanced }
@@ -131,7 +130,8 @@
 
 (defun stap-definition-exec (fn)
   "execute (maybe recursively) STAP definition"
-  (setq stap-tokens (append fn (cdr stap-tokens))))
+  (setq stap-context fn)
+  (setq stap-tokens (append (cdr fn) (cdr stap-tokens))))
 
 (defun stap-word-exec (word)
   "invoke word associated lambda"
@@ -212,8 +212,14 @@
 
 (defun stap-finish-word-compilation ()
   "finalize word compilation and enter interpretation mode"
-  (let ((new-word (nreverse stap-new-word)))
-    (stap-dict-store (car new-word) (cdr new-word)))
+  (let* ((new-word (nreverse stap-new-word))
+	 (sym (car new-word)) ; new word identifying symbol
+	 (body (cdr new-word)) ; new word instructions list
+	 (entry (stap-dict-fetch sym))) ; previously entry with same name
+    (stap-dict-store sym (cons (if (eq :not-found entry)
+				   stap-FALSE ; default starting stash value
+				 (car entry)) ; save previous stash value
+			       (cdr new-word))))
   (setq stap-eval-mode :interpret
 	stap-new-word '()))
 
@@ -232,6 +238,9 @@
 
 (defun stap-reload-environment (tokens)
   "prepare STAP environment to run expressions"
+  (let ((unnamed (cons 0 nil)))
+    (stap-dict-store '&unnamed unnamed) ; reset unnamed word
+    (setq stap-context unnamed)) ; we begin with unnamed context
   (setq stap-eval-mode :interpret) ; we must always start from this mode
   (setq stap-tokens tokens))
 
@@ -316,9 +325,9 @@
 
 (stap-dict-defun 'count (nil t) (length stap-stack))
 
-(stap-dict-defun 'pop (scalar nil) (setq stap-stash scalar))
+(stap-dict-defun 'pop (scalar nil) (setcar stap-context scalar))
 
-(stap-dict-defun 'push (nil nil) (stap-stack-push stap-stash))
+(stap-dict-defun 'push (nil nil) (stap-stack-push (car stap-context)))
 
 ;;; [ PREDEFINED: CONTROL FLOW ]
 ;;; conditionals, loops (if any will ever appear, they should be here)

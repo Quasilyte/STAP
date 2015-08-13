@@ -25,7 +25,9 @@
   or it should be implemented through `query'?
   the functions is-a string/vec/num are missing
 
-* should `=' also make type conversions?
+* is it good that redefined entry saves its storage value?
+  this enables some kind of variables, but are they fit the language?
+  are there any drawbacks (except performance).
 
 ============
 === MUST ===
