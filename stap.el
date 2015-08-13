@@ -15,10 +15,6 @@
 ;;;; [ MISCELLANEOUS ] ;;;;
 ;;; something not so tightly related to the STAP or its components
 
-(defun stap-init-conv-table (conv-table rules)
-  (dolist (rule rules)
-    (puthash (car rule) (cdr rule) conv-table)))
-
 (defun stap-symbol-convert (sym)
   "return modified `sym' if it matches any special pattern, unchanged otherwise"
   (if (= ?& (aref (symbol-name sym) 0))
@@ -39,7 +35,7 @@
 ;;;; [ DATA SECTION ] ;;;;
 
 ;;; [ CONSTANTS ]
-;;; named bindings for literals
+;;; named bindings for literals (mostly for readability)
 
 (defconst stap-TRUE -1 "Forth usually returns -1 as truth value")
 (defconst stap-FALSE 0 "only zero is considered as falsy value")
@@ -54,35 +50,7 @@
       stap-new-word '() ; car is word-symbol, cdr is its body
       stap-dict (make-hash-table :test 'equal) ; all defined words
       stap-eval-mode :interpret ;; can be `:interpret' or `:compile'
-      stap-nest-level 0 ;; counter for nested definitions to find balanced }
-
-      stap-conv-tables (make-hash-table :test 'eq :size 3)
-      stap-num-conv-table (make-hash-table :test 'eq :size 3)
-      stap-str-conv-table (make-hash-table :test 'eq :size 3)
-      stap-vec-conv-table (make-hash-table :test 'eq :size 3))
-
-;;; [ CONVERSION RULES ]
-;;; description of how one data types should be coerced into another
-
-(stap-init-conv-table stap-num-conv-table `((integer . identity)
-					    (string . string-to-number)))
-
-(stap-init-conv-table
- stap-str-conv-table (list '(integer . number-to-string)
-			   '(string . identity)
-			   (cons 'vector (lambda (vect)
-					   (let ((1st (aref vect 0)))
-					     (if (stringp 1st)
-						 1st
-					       (concat vect)))))))
-
-(stap-init-conv-table stap-vec-conv-table '((integer . vector)
-					    (string . vconcat)
-					    (vector . identity)))
-
-(puthash 'integer stap-num-conv-table stap-conv-tables)
-(puthash 'string stap-str-conv-table stap-conv-tables)
-(puthash 'vector stap-vec-conv-table stap-conv-tables)
+      stap-nest-level 0) ;; counter for nested definitions to find balanced }
 
 ;;;; [ CORE ] ;;;;
 
@@ -108,10 +76,6 @@
       (push (stap-stack-pop) li)
       (setq n (1- n)))
     (nreverse li)))
-
-(defun stap-stack-pop-type (conv-table)
-  (let ((top (stap-stack-pop)))
-    (funcall (gethash (type-of top) conv-table) top)))
 
 (defun stap-stack-push (scalar)
   "push scalar on top of the stack"
@@ -308,14 +272,7 @@
 		stap-TRUE
 	      stap-FALSE))
 		  
-(stap-dict-defun
- '+ (1st t) (let ((type (stap-get-type 1st)))
-	      (funcall (pcase type
-			 (`integer '+)
-			 (`string 'concat)
-			 (`vector 'vconcat))
-		       1st
-		       (stap-stack-pop-type (gethash type stap-conv-tables)))))
+(stap-dict-defun '+ ((1st 2nd) t) (+ 1st 2nd))
 
 (stap-dict-defun '= ((1st 2nd) t) (let ((type (stap-get-type 1st)))
 				    (if (eq 'integer type)
@@ -374,25 +331,39 @@
 
 (stap-dict-defun 'split (seq nil) (setq stap-stack (append seq stap-stack)))
 
-(stap-dict-defun 'vec (n t) (cond ((> n 0) (vconcat (stap-stack-npop n)))
+(stap-dict-defun 'vec (n t) (cond ((vectorp n) (vconcat n (stap-stack-pop)))
+				  ((> n 0) (vconcat (stap-stack-npop n)))
 				  ((< n 0) (make-vector (abs n) 0))))
 
-(stap-dict-defun 'str (n t) (cond ((> n 0) (concat (stap-stack-npop n)))
+(stap-dict-defun 'str (n t) (cond ((stringp n) (concat n (stap-stack-pop)))
+				  ((> n 0) (concat (stap-stack-npop n)))
 				  ((< n 0) (make-string (abs n) 0))))
 
 (stap-dict-defun 'copy (nil t) (copy-sequence (car stap-stack)))
 
+;;; [ PREDEFINED: TYPE ASSERTS ]
+;;; check the top element type, convert to desired type if its type differs
+
+(stap-dict-defun
+ 'num! (top t) (pcase (stap-get-type top)
+		 (`integer top)
+		 (`string (string-to-number top))
+		 (`vector (error "vector can not be coerced with `num!'"))))
+
+(stap-dict-defun
+ 'str! (top t) (pcase (stap-get-type top)
+		 (`integer (number-to-string top))
+		 (`string top)
+		 (`vector (error "vector can not be coerced with `str!'"))))
+
+(stap-dict-defun
+ 'vec! (top t) (if (vectorp top)
+		   top
+		 (vector top)))
+
 ;;; [ PREDEFINED: ENVIRONMENT ]
 ;;; provides API for communicating with executing interpreter and OS
-
-(stap-dict-store
- 'rename (lambda ()
-	   (let* ((syms (mapcar 'stap-intern-symbol (stap-stack-npop 2)))
-		  (entry (stap-dict-fetch (car (cdr syms)))))
-	     (when (not (eq :not-found entry))
-	       (stap-dict-store (car syms) entry)
-	       (stap-dict-remove (car (cdr syms)))))))
-
+ 
 (stap-dict-defun
  'rename (((names 2)) nil) (let* ((syms (mapcar 'stap-intern-symbol names))
 				  (entry (stap-dict-fetch (car (cdr syms)))))
