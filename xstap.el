@@ -59,47 +59,73 @@
 
 ;;;; [ LANGUAGE EXTENSIONS ] ;;;;
 
+(defun xstap:import-stack-dict ()
+  "imports stack utils"
+  (stap: '({ reorder ( s1 -- )
+	     len shake }
+	     
+	   { swap ( a1 a2 -- a2 a1 )
+	     "10" reorder }
+	   
+	   { dup ( a1 -- a1 a1 )
+	     "00" 1 shake }
+	   
+	   { drop ( a1 -- )
+	     "" 1 shake }
+	   
+	   { ndrop ( n1 -- )
+	     "" swap shake }
+	   
+	   { drop-all ( -- )
+	     count ndrop })))
+
+(defun xstap:import-sequence-dict ()
+  "imports string and vector utils"
+  (stap: '({ 1st ( [a1 ..] -- [a1 ..] a1 )
+	     0 nth }
+	     
+	   { 2nd ( [a1 a2 ..] -- [a1 a2 ..] a2 )
+	     1 nth }
+	   
+	   { 3rd ( [a1 a2 a3 ..] -- [a1 a2 a3 ..] a3 )
+	     2 nth })))
+
+(defun xstap:import-pairs-dict ()
+  "imports functions useful when dealing with [x x] vectors;
+REQUIRES: `stack', `sequence'"
+  (stap: '({ pair ( a1 a2 -- [a2 a1] )
+	     2 vec }
+	     
+	   { pair.lset ( [a1 a2] a3 -- [a3 a2] )
+	     0 swap set }
+	   
+	   { pair.rset ( [a1 a2] a3 -- [a1 a3] )
+	     1 swap set }
+	     
+	   { pair.l++ ( [n1 a1] -- [n2 a1] )
+	     1st 1+ pair.lset }
+	     
+	   { pair.l-- ( [n1 a1] -- [n2 a1] )
+	     1st 1- pair.lset }
+	   
+	   { pair.r++ ( [a1 n1] -- [a1 n2] )
+	     2nd 1+ pair.rset }
+	   
+	   { pair.r-- ( [a1 n1] -- [a1 n2] )
+	     2nd 1- pair.rset }
+	   
+	   { pair.vals ( [a1 a2] -- [a1 a2] a2 a1 )
+	     1st swap 2nd "021" reorder }
+	     
+	   { pair.ldiff ( [n1 n2] -- n3 )
+	     pair.vals - }
+	     
+	   { pair.rdiff ( [n1 n2] -- n3 )
+	     pair.vals swap - })))
+	   
 (defun xstap:import-essential-dict ()
   "imports essential stdlib (name clashes with your definitions are possible)"
-  (stap: '(( stack manipulations )
-	   
-	     { swap "10" 2 shake }
-	     { dup "00" 1 shake }
-	     
-	     { drop "" 1 shake }
-	     { ndrop "" swap shake }
-	     { drop-all count ndrop }
-
-	   ( stash utils )
-	   
-	     { store pop push }
-	     { ++ push 1+ pop }
-	     { -- push 1- pop }
-
-	   ( sequence utils )
-	     
-	     { 1st 0 nth }
-	     { 2nd 1 nth }
-	     { 3rd 2 nth }
-	   
-	   ( pairs )
-
-	     { pair 2 vec } 
-	     { pair.lset 0 swap set }
-	     { pair.rset 1 swap set }
-	     { pair.l++ 1st 1+ pair.lset }
-	     { pair.l-- 1st 1- pair.lset }
-	     { pair.r++ 2nd 1+ pair.rset }
-	     { pair.r-- 2nd 1- pair.rset }	     
-	     { pair.vals 1st swap 2nd "021" 3 shake }
-	     { pair.ldiff pair.vals - }
-	     { pair.rdiff pair.vals swap - }
-
-	   ( printing words )
-	     
-	     { @store push @one }
-	   
-	   ( iteration primitives )
+  (stap: ' ( iteration primitives )
 
 	     { break 0 pop }
 
@@ -127,17 +153,7 @@
 	       { :do/stack 1- "010" 2 shake nth &loop-body swap } $do/stack })))
 
 (defun xstap:import-math-dict ()
-  "includes `sqr', `abd' and others requires `essential-dict'"
-  (stap: '(( general functions )
-	     { sqr dup * }
-	     { abs dup 0 < if neg endif })))
- 
-(defun xstap:import-operators-dict ()
-  "imports operators like `2+', `0=', etc."
-  (stap: '(( comparing with nil )
-	     { 0= 0 = }
-	     { 0< 0 < }
-	     { 0> 0 > }
-	   ( stack manipulations )
-	     { 2+ 2 + }
-	     { 2- 2 - })))
+  "includes `sqr', `abd' and others;
+REQUIRES: `stack'"
+  (stap: '({ sqr dup * }
+	   { abs dup 0 < if neg endif }))) 

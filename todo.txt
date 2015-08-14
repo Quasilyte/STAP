@@ -25,9 +25,7 @@
   or it should be implemented through `query'?
   the functions is-a string/vec/num are missing
 
-* is it good that redefined entry saves its storage value?
-  this enables some kind of variables, but are they fit the language?
-  are there any drawbacks (except performance).
+* to permit stash vconcat or not permit?
 
 ============
 === MUST ===

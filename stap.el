@@ -132,7 +132,7 @@
 
 (defun stap-definition-exec (sym)
   "execute (maybe recursively) STAP definition"
-  (setq stap-tokens (append (cdr fn) ; function body (new instructions)
+  (setq stap-tokens (append fn ; function body (new instructions)
 			    (cdr stap-tokens)))) ; rest instructions
 
 (defun stap-word-exec (sym)
