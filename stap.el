@@ -12,13 +12,34 @@
 ;;
 ;; e.g. `{' and `}' are tags, but `IF' is a word
 
+;;;; [ DATA SECTION ] ;;;;
+
+;;; [ CONSTANTS ]
+;;; named bindings for literals (mostly for readability)
+
+(defconst stap-TRUE -1 "Forth usually returns -1 as truth value")
+(defconst stap-FALSE 0 "only zero is considered as falsy value")
+(defconst stap-DEFAULT-STASH-SIZE 8 "capacity of global accessible vector")
+(defconst stap-UNNAMED '&unnamed "symbol used to distinguish unnamed function")
+
+;;; [ RUNTIME VARIABLES ]
+;;; state of the STAP environment in those
+
+(setq stap-stack '() ; main data stack for execution
+      stap-stash [] ; fixed-size vector stored out of main stack
+      stap-tokens '() ; usually this is an input data for interpreter
+      stap-new-word '() ; car is word-symbol, cdr is its body
+      stap-dict (make-hash-table :test 'equal) ; all defined words
+      stap-eval-mode :interpret ;; can be `:interpret' or `:compile'
+      stap-nest-level 0) ;; counter for nested definitions to find balanced }
+
 ;;;; [ MISCELLANEOUS ] ;;;;
 ;;; something not so tightly related to the STAP or its components
 
 (defun stap-symbol-convert (sym)
   "return modified `sym' if it matches any special pattern, unchanged otherwise"
   (if (= ?& (aref (symbol-name sym) 0))
-      '&unnamed
+      stap-UNNAMED
     sym))
 
 (defun stap-intern-symbol (s)
@@ -31,25 +52,6 @@
     (if (eq 'float type)
 	'integer
       type)))
-
-;;;; [ DATA SECTION ] ;;;;
-
-;;; [ CONSTANTS ]
-;;; named bindings for literals (mostly for readability)
-
-(defconst stap-TRUE -1 "Forth usually returns -1 as truth value")
-(defconst stap-FALSE 0 "only zero is considered as falsy value")
-
-;;; [ RUNTIME VARIABLES ]
-;;; state of the STAP environment in those
-
-(setq stap-stack '() ; main data stack for execution      
-      stap-tokens '() ; usually this is an input data for interpreter
-      stap-new-word '() ; car is word-symbol, cdr is its body
-      stap-context '() ; word-local environment
-      stap-dict (make-hash-table :test 'equal) ; all defined words
-      stap-eval-mode :interpret ;; can be `:interpret' or `:compile'
-      stap-nest-level 0) ;; counter for nested definitions to find balanced }
 
 ;;;; [ CORE ] ;;;;
 
@@ -128,19 +130,19 @@
 ;;; [ WORDS ]
 ;;; operations defined on `words'
 
-(defun stap-definition-exec (fn)
+(defun stap-definition-exec (sym)
   "execute (maybe recursively) STAP definition"
-  (setq stap-context fn)
-  (setq stap-tokens (append (cdr fn) (cdr stap-tokens))))
+  (setq stap-tokens (append (cdr fn) ; function body (new instructions)
+			    (cdr stap-tokens)))) ; rest instructions
 
-(defun stap-word-exec (word)
+(defun stap-word-exec (sym)
   "invoke word associated lambda"
-  (let ((fn (stap-dict-fetch (stap-symbol-convert word))))
+  (let ((fn (stap-dict-fetch (stap-symbol-convert sym))))
     (if (eq :not-found fn)
-	(error (format "undefined e4 word: `%s'" word))
+	(error (format "undefined e4 word: `%s'" sym))
       (if (functionp fn)
 	  (stap-next-token-do (funcall fn)) ; predefined word
-	(stap-definition-exec fn)))))
+	(stap-definition-exec sym)))))
 
 (defun stap-call-with-arity (fn arity)
   "call lisp function with args passed from the e4 stack"
@@ -190,7 +192,7 @@
   (if (eq '{ word) ; mode switching symbol
       (stap-finish-words-interpretation)
     (if (symbolp word)
-	(stap-word-exec word) 
+	  (stap-word-exec word)
       (stap-take-scalar word)))) ; everything except symbols considered scalars
 
 ;;; [ COMPILE ]
@@ -212,14 +214,8 @@
 
 (defun stap-finish-word-compilation ()
   "finalize word compilation and enter interpretation mode"
-  (let* ((new-word (nreverse stap-new-word))
-	 (sym (car new-word)) ; new word identifying symbol
-	 (body (cdr new-word)) ; new word instructions list
-	 (entry (stap-dict-fetch sym))) ; previously entry with same name
-    (stap-dict-store sym (cons (if (eq :not-found entry)
-				   stap-FALSE ; default starting stash value
-				 (car entry)) ; save previous stash value
-			       (cdr new-word))))
+  (let* ((new-word (nreverse stap-new-word)))
+    (stap-dict-store (car new-word) (cdr new-word)))
   (setq stap-eval-mode :interpret
 	stap-new-word '()))
 
@@ -236,17 +232,24 @@
 ;;; [ EVALUATION ]
 ;;; the highest level, entry point
 
-(defun stap-reload-environment (tokens)
-  "prepare STAP environment to run expressions"
-  (let ((unnamed (cons 0 nil)))
-    (stap-dict-store '&unnamed unnamed) ; reset unnamed word
-    (setq stap-context unnamed)) ; we begin with unnamed context
+(defun stap-stash-init (stash-size)
+  (let ((stash-size (if stash-size
+			stash-size
+		      stap-DEFAULT-STASH-SIZE)))
+    (if (= stash-size (length stap-stash))
+	(fillarray stap-stash 0) 
+      (setq stap-stash (make-vector stash-size 0)))))
+
+(defun stap-reload-environment (tokens stash-size)
+  "prepare STAP environment to run another portion of expressions"
+  (stap-stash-init stash-size)
+  (stap-dict-store stap-UNNAMED '()) ; reset unnamed word
   (setq stap-eval-mode :interpret) ; we must always start from this mode
   (setq stap-tokens tokens))
 
-(defun stap: (words)
+(defun stap: (words &optional stash-size)
   "take some STAP words as a list, evaluate them"
-  (stap-reload-environment words)
+  (stap-reload-environment words stash-size)
   (stap-while-token
    (if (listp token)
        (stap-next-token) ; if it is a list, then it is a comment
@@ -265,11 +268,16 @@
     (stap-stack-push output)))
 
 (defun stap-command-describe (name)
+  "print internal representation of `name' definition contents"
   (let* ((sym (intern-soft name))
 	 (body (stap-dict-fetch (stap-symbol-convert sym))))
     (if body
 	(message "`%s' %s" sym body)
       (message "word `%s' is not defined" sym))))
+
+(defun stap-command-dump (target)
+  "print dumped `target'"
+  (message "TBA"))
 
 (defun stap-query-command (msg)
   "parse `msg' and execute special command"
@@ -277,7 +285,8 @@
 	 (cmd (car msg))
 	 (arg (car (cdr msg))))
     (funcall (pcase cmd
-	       ("describe" 'stap-command-describe))
+	       ("describe" 'stap-command-describe)
+	       ("dump" 'stap-command-dump))
 	     arg)))
 
 ;;;; [ BUILTINS ] ;;;;
@@ -325,14 +334,7 @@
 
 (stap-dict-defun 'count (nil t) (length stap-stack))
 
-;;; [ PREDEFINED: STASH ]
-;;; definition-local storage
-
-(stap-dict-defun 'pop (scalar nil) (setcar stap-context scalar))
-
-(stap-dict-defun 'push (nil nil) (stap-stack-push (car stap-context)))
-
-(stap-dict-defun 'store (nil nil) (setcar stap-context (car stap-stack)))
+(stap-dict-defun 'stash (nil t) stap-stash)
 
 ;;; [ PREDEFINED: CONTROL FLOW ]
 ;;; conditionals, loops (if any will ever appear, they should be here)
